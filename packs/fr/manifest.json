@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "id": "fr",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "French",
+  "languages": [
+    {
+      "tag": "fr",
+      "iso639_3": "fra",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "fr"
+      ]
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "reader",
+          "params": {
+            "rec": "en:rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "en:rapid-rec-latin",
+            "en:rapid-cls",
+            "en:rapid-det"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "single",
+        "version": 1,
+        "params": {
+          "reader": "rapidocr"
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [],
+  "fonts": [],
+  "must_survive": [
+    {
+      "name": "accents",
+      "chars": "àâçéèêëîïôùûüÿœæÀÂÇÉÈÊËÎÏÔÙÛÜŸŒÆ",
+      "unit": "word",
+      "floor": 0.9
+    }
+  ],
+  "bench": {
+    "kit": "1.1",
+    "corpus": "public-v1@809b4abfa793e9450044de80ddb90dca937f6c8800e649ba436b143a0466fd9e",
+    "engine_versions": {
+      "rapidocr": "3.10.0",
+      "tesseract": "5.5.3 (tesserocr 2.12.0)",
+      "vision": "rev3 (macOS 27.2)"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "metrics": {
+          "words": [
+            0.9869,
+            0.9812,
+            0.9582
+          ],
+          "trigrams": [
+            0.9995,
+            0.9994,
+            0.9821
+          ],
+          "digits": [
+            1.0,
+            1.0,
+            0.9902
+          ],
+          "must-accents": [
+            1.0,
+            0.9977,
+            0.9878
+          ]
+        },
+        "worst_page": 0.7634,
+        "seconds_per_page": 2.0556,
+        "selection": {
+          "policy": "maximin-v2",
+          "margin": 0.0017
+        }
+      }
+    }
+  },
+  "canary": {
+    "file": "canary-fr.png",
+    "bytes": 24501,
+    "sha256": "b270288074c5bb4c472a352f602ff2298bba99f59ca860a4356d156f173bd26d",
+    "dpi": 300,
+    "must_find": [
+      "Photosynthèse",
+      "garçon",
+      "cœur",
+      "4521"
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Woda",
+      "revid": 80265543,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=80265543&action=raw",
+      "sha256": "3e93f8cf0bdc2af6cef31ab41930dd23e9f51f37acf28d0acf2fd99df94e6f56",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Słońce",
+      "revid": 80610142,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=80610142&action=raw",
+      "sha256": "40057e189dae4d0235592f830433a53a3e9766f22de46a115b570fe2e57a560e",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Księżyc",
+      "revid": 81124335,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=81124335&action=raw",
+      "sha256": "1e40b022dcd54caf2db2955cc1accd470ddb19c93ae44588ce72727106f8606c",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Fotosynteza",
+      "revid": 81118481,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=81118481&action=raw",
+      "sha256": "53639bd1ca1780e30282c40c7f0aa465431f594f442d933f50d80a302ff10471",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Szachy",
+      "revid": 80808204,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=80808204&action=raw",
+      "sha256": "1483214910d6af4761aec0e5b52ba879f0756d8c737def054544a1a9fb5c119d",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Chleb",
+      "revid": 81126828,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=81126828&action=raw",
+      "sha256": "02342233f192421645fd62675df04d5588bb12ae1be309ebaa050d3dfae52dd0",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Wulkan",
+      "revid": 77520754,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=77520754&action=raw",
+      "sha256": "b6621d651f1c5167d54e88aadcf4f081d70c69756adc4e44450eb12d16c239b4",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pl",
+      "title": "Rzeka",
+      "revid": 80625384,
+      "url": "https://pl.wikipedia.org/w/index.php?oldid=80625384&action=raw",
+      "sha256": "5113d749bbc443a2fc1f173887e92414335271ba24fa3873f78cd35a213f6b66",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

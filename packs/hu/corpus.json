@@ -1,0 +1,90 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "hu",
+      "title": "Víz",
+      "revid": 29374010,
+      "url": "https://hu.wikipedia.org/w/index.php?oldid=29374010&action=raw",
+      "sha256": "eadbdb757393998c5aa8d744125547589256a52b54caf78276965f903f0f5f4e",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "hu",
+      "title": "Nap",
+      "revid": 29330413,
+      "url": "https://hu.wikipedia.org/w/index.php?oldid=29330413&action=raw",
+      "sha256": "9a67758d38e7661e766302083721e57fcdb95d020192646812febf7d49606f55",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "hu",
+      "title": "Hold",
+      "revid": 29474648,
+      "url": "https://hu.wikipedia.org/w/index.php?oldid=29474648&action=raw",
+      "sha256": "c8ba84db71f3850551a29979d46bed28817949b6b366ee23a5e927e5d81528a5",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "hu",
+      "title": "Fotoszintézis",
+      "revid": 28666246,
+      "url": "https://hu.wikipedia.org/w/index.php?oldid=28666246&action=raw",
+      "sha256": "cad2606e468eaebb1be9ec5fb6f53ddcc58f716fda1535a86a3bbd7d4e3d5062",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "hu",
+      "title": "Sakk",
+      "revid": 29446793,
+      "url": "https://hu.wikipedia.org/w/index.php?oldid=29446793&action=raw",
+      "sha256": "4526059beaeea1f40a73b28287f5380919ba40a344963a67b154021442ac198f",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "hu",
+      "title": "Kenyér",
+      "revid": 28945184,
+      "url": "https://hu.wikipedia.org/w/index.php?oldid=28945184&action=raw",
+      "sha256": "2e29eb8ce8dfec2cbad4ce411c64d2ed62d9f72879b7c451dac2a540e83943e9",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "hu",
+      "title": "Tűzhányó",
+      "revid": 29245472,
+      "url": "https://hu.wikipedia.org/w/index.php?oldid=29245472&action=raw",
+      "sha256": "a41a3c76bcd2fda53ec6d5a1580f4f1a4674238f78d01343631b0a1771002c11",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

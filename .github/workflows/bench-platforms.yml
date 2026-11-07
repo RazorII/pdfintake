@@ -1,0 +1,136 @@
+name: bench-platforms
+
+# Benches the language packs a maintainer names on Linux and Windows (and, when asked, macOS), and
+# uploads each platform's bench.json as an artifact, so a pack's manifest can claim those platforms.
+# For each pack and runner: scripts/dev-install.sh, then `pdfintake kit render` (bench pages need
+# the pinned corpus rendered), `kit candidates` and `kit bench`. The kit writes packs/<id>/bench.json
+# inside the runner's checkout only; nothing is committed or published from here. The maintainer
+# merges the downloaded bench.json files and runs `pdfintake kit choose` locally.
+#
+# macOS is off by default: Mac benches run on the maintainer's Mac, where Vision matches the
+# release machine. Turn it on to compare a GitHub macOS runner.
+#
+# Safety: started by hand only (workflow_dispatch), with a read-only token and no stored secrets.
+# The pack ids reach the shell only through environment variables, and only after they match the
+# pack id pattern and name a packs/<id>/manifest.json. Downloads are the kit's own, from the hosts
+# the manifest schema and kit/corpus.py allow. Action versions are pinned to commit SHAs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      packs:
+        description: "Pack ids, separated by spaces or commas (for example: es fr pt)"
+        required: true
+        type: string
+      macos:
+        description: "Also bench on macOS (macos-15)"
+        required: false
+        default: false
+        type: boolean
+      current_only:
+        description: "Bench only each manifest's own reader set, not every candidate"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      packs: ${{ steps.which.outputs.packs }}
+      runners: ${{ steps.which.outputs.runners }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Which packs and runners
+        id: which
+        env:
+          PACKS_INPUT: ${{ inputs.packs }}
+          WITH_MACOS: ${{ inputs.macos }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys
+          from pathlib import Path
+          pattern = re.compile(r"^[a-z]{2,3}(-[a-z0-9]{2,8})?$")
+          asked = [p for p in re.split(r"[\s,]+", os.environ.get("PACKS_INPUT", "")) if p]
+          bad = [p for p in asked if not pattern.match(p) or not Path("packs", p, "manifest.json").is_file()]
+          if bad or not asked:
+              print(f"::error::not a pack in packs/: {bad or 'none given'}")
+              sys.exit(1)
+          packs = sorted(set(asked))
+          runners = ["ubuntu-24.04", "windows-latest"]
+          if os.environ.get("WITH_MACOS") == "true":
+              runners.append("macos-15")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"packs={json.dumps(packs)}\n")
+              out.write(f"runners={json.dumps(runners)}\n")
+          print("packs:", packs, "runners:", runners)
+          PY
+
+  bench:
+    needs: plan
+    name: bench-${{ matrix.pack }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.plan.outputs.runners) }}
+        pack: ${{ fromJSON(needs.plan.outputs.packs) }}
+    env:
+      PYTHONUTF8: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PDFINTAKE_REQUIRE_VISION: ${{ startsWith(matrix.os, 'macos') && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: Cache and work folders
+        shell: bash
+        run: |
+          echo "PDFINTAKE_CACHE=$RUNNER_TEMP/pdfintake-bench-cache" >> "$GITHUB_ENV"
+          echo "KIT_WORK=$RUNNER_TEMP/kit-work" >> "$GITHUB_ENV"
+          echo "BENCH_OUT=$RUNNER_TEMP/bench-out" >> "$GITHUB_ENV"
+      - name: Install
+        shell: bash
+        run: bash scripts/dev-install.sh --python 3.12
+      - name: Render the bench pages
+        shell: bash
+        env:
+          PACK: ${{ matrix.pack }}
+        run: |
+          mkdir -p "$BENCH_OUT"
+          pdfintake kit render "$PACK" --work "$KIT_WORK" --json > "$BENCH_OUT/render.json"
+      - name: Candidate reader sets
+        shell: bash
+        env:
+          PACK: ${{ matrix.pack }}
+        run: pdfintake kit candidates "$PACK" --work "$KIT_WORK" --json > "$BENCH_OUT/candidates.json"
+      - name: Bench
+        shell: bash
+        env:
+          PACK: ${{ matrix.pack }}
+          CURRENT_ONLY: ${{ inputs.current_only }}
+        run: |
+          only=()
+          if [ "$CURRENT_ONLY" = "true" ]; then only=(--current-only); fi
+          pdfintake kit bench "$PACK" --work "$KIT_WORK" --json ${only[@]+"${only[@]}"} > "$BENCH_OUT/bench-run.json"
+          cp "packs/$PACK/bench.json" "$BENCH_OUT/bench.json"
+      - name: Upload bench.json
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bench-${{ matrix.pack }}-${{ matrix.os }}
+          path: ${{ env.BENCH_OUT }}
+          if-no-files-found: warn
+          retention-days: 30

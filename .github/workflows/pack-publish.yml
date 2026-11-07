@@ -1,0 +1,167 @@
+name: pack-publish
+
+# Attaches the data wheels a core release hosts to that release's draft on GitHub. The wheels live
+# as release assets on RazorII/pdfintake, with immutable releases on: once the release is
+# published, no asset can be added, changed or deleted, and its tag can't move.
+#
+# scripts/release.sh starts this, after it has rebuilt the same wheels on the release Mac, checked
+# them against the index and passed them through the maintainer's release scan (RELEASE_SCAN, which
+# doesn't run in GitHub CI), created the draft, and pushed the tag. Here the wheels are rebuilt from
+# the tagged source, as every CI install builds them (scripts/dev-install.sh --wheels-only, which
+# draws each pack's canary before the build), and must match the index's SHA-256 byte for byte, so
+# what's uploaded is exactly what the release scan checked. Action versions are pinned to commit SHAs.
+# The job runs in the pack-publish environment, whose required reviewer is RazorII: nothing is
+# uploaded until the maintainer approves it in GitHub (release.sh refuses to tag unless that rule is
+# set). No token is stored; the job's own token writes to this repo's releases only. Of the run steps,
+# only the two that call gh hold it: the rebuild, which downloads the pinned models and fonts from
+# upstream hosts and the canary renderer's pinned libraries through uv, never sees it. GitHub hands
+# the token to every action as its default github-token input, so this job runs first-party actions
+# only (actions/checkout, actions/setup-python): a run step installs uv with setup-python's pip, at
+# one pinned version and wheel digest, instead of a third-party setup action, and nothing restores
+# or saves a cache.
+# A rerun on a draft that already holds some of the wheels, each at its pinned digest, uploads only
+# the missing ones; a draft holding anything else stops the job.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The core release whose draft gets the wheels (vX.Y.Z)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: pack-publish
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check the tag
+        shell: bash
+        run: |
+          [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "::error::not a release tag: $TAG"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        shell: bash
+        run: |
+          # One version, one wheel digest (manylinux x86_64, this runner's), through setup-python's pip.
+          printf '%s\n' 'uv==0.13.5 --hash=sha256:fa8d26e08e34c29c0c4e820cf3181757086d547240b4f4d31ff1d8bd810ca946' \
+            > "$RUNNER_TEMP/uv-requirements.txt"
+          python -m pip install --disable-pip-version-check --no-cache-dir --no-deps --only-binary :all: \
+            --require-hashes -r "$RUNNER_TEMP/uv-requirements.txt"
+          uv --version
+      - name: The wheels this release hosts, from the index
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, re, sys, tomllib
+          from pathlib import Path
+          tag = os.environ["TAG"]
+          repo = os.environ["GH_REPO"]
+          asset = re.compile(r"^https://github\.com/" + re.escape(repo) + r"/releases/download/([^/]+)/([A-Za-z0-9_.+-]+\.whl)$")
+          index = json.loads(Path("src/pdfintake/langpacks/index.json").read_text(encoding="utf-8"))
+          deps = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["dependencies"]
+          pin = [re.match(r"^pdfintake-data-en\s*@\s*(\S+?)#sha256=([0-9a-f]{64})\s*$", d) for d in deps]
+          pin = [m for m in pin if m]
+          if len(pin) != 1:
+              sys.exit("::error::pyproject.toml needs exactly one pinned pdfintake-data-en dependency")
+          hosted = []
+          for entry in index["packs"]:
+              dist = entry["dist"]
+              url, sha = (pin[0].group(1), pin[0].group(2)) if entry.get("base") else (dist.get("url") or "", dist["sha256"])
+              if sha != dist["sha256"]:
+                  sys.exit(f"::error::{entry['id']}: the pyproject pin and the index disagree")
+              m = asset.match(url)
+              if m and m.group(1) == tag:
+                  hosted.append({"id": entry["id"], "file": m.group(2), "sha256": sha, "bytes": int(dist["bytes"])})
+          if any(not re.fullmatch(r"[a-z]{2,3}(-[a-z0-9]{2,8})?", h["id"]) for h in hosted):
+              sys.exit("::error::the index names a pack id that isn't one")
+          Path("hosted.json").write_text(json.dumps(hosted), encoding="utf-8")
+          Path("hosted-ids.txt").write_text(",".join(h["id"] for h in hosted), encoding="utf-8")
+          print(f"{tag} hosts: {[h['file'] for h in hosted] or 'no data wheels'}")
+          PY
+      - name: Rebuild them from the tagged source and check them against the index
+        shell: bash
+        run: |
+          # The same build as every CI install and scripts/release.sh: scripts/dev-install.sh draws each
+          # pack's canary with kit/render.py (in a throwaway environment holding only the libraries it
+          # draws with, at the exact versions tools/canary-env.txt pins), then builds the wheel with
+          # src/pdfintake/datawheel.py, which refuses a canary whose bytes differ from the manifest's pin.
+          # --wheels-only installs nothing.
+          ids="$(cat hosted-ids.txt)"
+          mkdir -p upload build-wheels
+          if [ -n "$ids" ]; then
+            PDFINTAKE_DIST=build-wheels bash scripts/dev-install.sh --wheels-only --python 3.12 --packs "$ids"
+          fi
+          python - <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+          hosted = json.loads(Path("hosted.json").read_text(encoding="utf-8"))
+          built = sorted(w.name for w in Path("build-wheels").glob("*.whl"))
+          if built != sorted(h["file"] for h in hosted):
+              sys.exit(f"::error::built {built}, the index names {sorted(h['file'] for h in hosted)}")
+          for h in hosted:
+              wheel = Path("build-wheels", h["file"])
+              data = wheel.read_bytes()
+              got = hashlib.sha256(data).hexdigest()
+              if got != h["sha256"] or len(data) != h["bytes"]:
+                  sys.exit(f"::error::{h['id']}: rebuilt as {got} ({len(data)} bytes), "
+                           f"the index pins {h['sha256']} ({h['bytes']} bytes)")
+              wheel.rename(Path("upload", h["file"]))
+              print(f"{h['file']}: {h['sha256']}")
+          Path("upload.json").write_text(json.dumps({h["file"]: h["sha256"] for h in hosted}), encoding="utf-8")
+          PY
+      - name: Attach them to the draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GH_REPO/releases?per_page=100" --jq "[.[] | select(.tag_name == \"$TAG\")]" > draft.json
+          python - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          found = json.loads(Path("draft.json").read_text(encoding="utf-8"))
+          tag = os.environ["TAG"]
+          if len(found) != 1 or found[0].get("draft") is not True:
+              sys.exit(f"::error::{tag} needs exactly one draft release ({len(found)} releases found); a published release never changes")
+          want = json.loads(Path("upload.json").read_text(encoding="utf-8"))
+          have = {a["name"]: a.get("digest") for a in found[0].get("assets", [])}
+          bad = sorted(n for n, d in have.items() if n not in want or d != f"sha256:{want[n]}")
+          if bad:
+              sys.exit(f"::error::the {tag} draft holds assets that aren't these wheels at their pinned digests: {bad}; "
+                       "remove them on GitHub, then run scripts/release.sh again")
+          missing = sorted(n for n in want if n not in have)
+          Path("missing.txt").write_text("".join(f"upload/{n}\n" for n in missing), encoding="utf-8")
+          print(f"{len(have)} wheels already attached at their pinned digests, {len(missing)} to upload")
+          PY
+          files=()
+          while IFS= read -r f; do files+=("$f"); done < missing.txt
+          [ ${#files[@]} -eq 0 ] || gh release upload "$TAG" "${files[@]}"
+      - name: Check every attached digest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GH_REPO/releases?per_page=100" --jq ".[] | select(.tag_name == \"$TAG\")" > release.json
+          python - <<'PY'
+          import json, sys
+          want = json.load(open("upload.json", encoding="utf-8"))
+          have = {a["name"]: a.get("digest") for a in json.load(open("release.json", encoding="utf-8"))["assets"]}
+          bad = [f for f, sha in want.items() if have.get(f) != f"sha256:{sha}"]
+          if bad:
+              sys.exit(f"::error::digest mismatch on GitHub: {bad}")
+          print(f"{len(want)} wheels attached, every digest matches the index")
+          PY

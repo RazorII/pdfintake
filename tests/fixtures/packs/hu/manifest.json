@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "id": "hu",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "Hungarian",
+  "languages": [
+    {
+      "tag": "hu",
+      "iso639_3": "hun",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "hu"
+      ]
+    },
+    "function_words": {
+      "words": [
+        "és",
+        "hogy",
+        "az",
+        "egy",
+        "vagy",
+        "csak",
+        "már",
+        "még",
+        "kell"
+      ],
+      "rivals": [
+        "und",
+        "der",
+        "die",
+        "das",
+        "nicht",
+        "que",
+        "les",
+        "bir"
+      ],
+      "min_hits": 3,
+      "ratio": 0.3333333333333333
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "hun",
+            "psm": 3
+          },
+          "models": [
+            "hun"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "en:rapid-rec-latin"
+          },
+          "models": [
+            "en:rapid-det",
+            "en:rapid-cls",
+            "en:rapid-rec-latin"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "primary_with_floor",
+        "version": 1,
+        "params": {
+          "primary": "tesseract",
+          "checker": "rapidocr",
+          "floor": 0.5,
+          "min_words": 20,
+          "word_conf": 0.8,
+          "min_len": 4
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "hun",
+      "file": "hun.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 12350405,
+      "sha256": "08786ad5fe25d502d1cfcdf606ba215f320409a1630109582fa1a38d93b3e32d",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/9ddc24e750eec0994223a9edc3fcb434a2244f3b/hun.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    }
+  ],
+  "fonts": [],
+  "canary": {
+    "file": "canary-hu.png",
+    "bytes": 25000,
+    "sha256": "70768e35d148afe379ef0caa68d485da05ccb52642f3a5ce59e89176147a1b41",
+    "dpi": 300,
+    "must_find": [
+      "őrlő",
+      "fűzfa"
+    ]
+  },
+  "must_survive": [
+    {
+      "name": "double-acute",
+      "chars": "őűŐŰ",
+      "unit": "word",
+      "floor": 0.9
+    }
+  ],
+  "bench": {
+    "kit": "1.0",
+    "corpus": "none",
+    "platforms": {}
+  }
+}

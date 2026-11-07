@@ -1,0 +1,104 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "th",
+      "title": "น้ำ",
+      "revid": 13292086,
+      "url": "https://th.wikipedia.org/w/index.php?oldid=13292086&action=raw",
+      "sha256": "e712552975862e13620d945f20c772f9f552b190937660dd26c3eef1edc9476e",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "th",
+      "title": "ดวงอาทิตย์",
+      "revid": 13387245,
+      "url": "https://th.wikipedia.org/w/index.php?oldid=13387245&action=raw",
+      "sha256": "40dcf48e7bb113cd96d697b69a7ce988fb7f324cdfa0d75c3a25a7c74952ed1b",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "th",
+      "title": "ดวงจันทร์",
+      "revid": 13305474,
+      "url": "https://th.wikipedia.org/w/index.php?oldid=13305474&action=raw",
+      "sha256": "5953da6da0d96235ba3ae7f03749e2a7e23d2647f3149aa4ea87f38a0e7d8b88",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "th",
+      "title": "การสังเคราะห์ด้วยแสง",
+      "revid": 12654117,
+      "url": "https://th.wikipedia.org/w/index.php?oldid=12654117&action=raw",
+      "sha256": "8aa6149a504e5e4e88a1c3ef92b94bfb4ba9ee67d81f879a7363ea217a9392a4",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "th",
+      "title": "หมากรุกสากล",
+      "revid": 13231264,
+      "url": "https://th.wikipedia.org/w/index.php?oldid=13231264&action=raw",
+      "sha256": "8c85e4ca615e1f340e54309551bbe5e1abf6fcea3c481f22c00e47631af300b8",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "th",
+      "title": "คณิตศาสตร์",
+      "revid": 13300515,
+      "url": "https://th.wikipedia.org/w/index.php?oldid=13300515&action=raw",
+      "sha256": "d916495249e75b9324ab3e6a08847b66969266f12b0644479aedf619783308dc",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "th",
+      "title": "ไฟฟ้า",
+      "revid": 13382598,
+      "url": "https://th.wikipedia.org/w/index.php?oldid=13382598&action=raw",
+      "sha256": "5ae093a67ace20142e636026c591b59eb5329bcc8a454af6f5813d57780f425d",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSansThai",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/6da9d59fd18f429cb8dbfa87e87669204f77ddab/fonts/NotoSansThai/unhinted/ttf/NotoSansThai-Regular.ttf",
+      "sha256": "d4303fe9c63ebb72759ca8b6d2040c8ae81689f7d08d7b91c656154382b49313",
+      "bytes": 20960,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerifThai",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/6da9d59fd18f429cb8dbfa87e87669204f77ddab/fonts/NotoSerifThai/unhinted/ttf/NotoSerifThai-Regular.ttf",
+      "sha256": "538df2b3033522cd48bff18d536f76db60ec04e8cb3f44028fa92dbee8e6e125",
+      "bytes": 26496,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/6da9d59fd18f429cb8dbfa87e87669204f77ddab/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "4a117c1a495bdd525ef84747b57dd16375fd6eeabb25f028ccfe3e5564b803bd",
+      "bytes": 414316,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/6da9d59fd18f429cb8dbfa87e87669204f77ddab/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "1a78329a27f3696445411e05fefaa4a6d4d733366c7ec5ea14ee9a834fe08fba",
+      "bytes": 493544,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 6,
+    "form": 3,
+    "microprint": 3,
+    "mixed_script": 3
+  }
+}

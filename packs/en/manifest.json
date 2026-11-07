@@ -1,0 +1,250 @@
+{
+  "schema": 1,
+  "id": "en",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "base": true,
+  "title": "English",
+  "languages": [
+    {
+      "tag": "en",
+      "iso639_3": "eng",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "en"
+      ]
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "eng",
+            "psm": 3,
+            "timeout_s": 300.0
+          },
+          "models": [
+            "eng"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "rapid-det",
+            "rapid-cls",
+            "rapid-rec-latin"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "primary_with_floor",
+        "version": 1,
+        "params": {
+          "primary": "tesseract",
+          "checker": "rapidocr",
+          "floor": 0.5,
+          "min_words": 20,
+          "word_conf": 0.8,
+          "min_len": 4
+        }
+      },
+      "fallback": "checker"
+    },
+    "darwin-arm64": {
+      "engines": [
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "reader",
+          "params": {
+            "rec": "rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "rapid-rec-latin",
+            "rapid-cls",
+            "rapid-det"
+          ]
+        },
+        {
+          "id": "vision",
+          "engine": "vision",
+          "role": "checker",
+          "params": {
+            "languages": [
+              "en-US"
+            ],
+            "revision": 3,
+            "level": "accurate",
+            "language_correction": true,
+            "timeout_s": 120.0
+          },
+          "models": []
+        }
+      ],
+      "pick": {
+        "rule": "single",
+        "version": 1,
+        "params": {
+          "reader": "rapidocr"
+        }
+      },
+      "fallback": "checker"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "osd",
+      "file": "osd.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 10562727,
+      "sha256": "9cf5d576fcc47564f11265841e5ca839001e7e6f38ff7f7aacf46d15a96b00ff",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/osd.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    },
+    {
+      "key": "eng",
+      "file": "eng.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 4113088,
+      "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+      "source": "https://github.com/tesseract-ocr/tessdata_fast/raw/923915d4ced2a7235221788285785a29c4a42d4a/eng.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    },
+    {
+      "key": "rapid-det",
+      "file": "ch_PP-OCRv4_det_mobile.onnx",
+      "engine": "rapidocr",
+      "kind": "onnx_det",
+      "bytes": 4745517,
+      "sha256": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9",
+      "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_mobile.onnx",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-paddleocr"
+    },
+    {
+      "key": "rapid-cls",
+      "file": "ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+      "engine": "rapidocr",
+      "kind": "onnx_cls",
+      "bytes": 585532,
+      "sha256": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c",
+      "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-paddleocr"
+    },
+    {
+      "key": "rapid-rec-latin",
+      "file": "latin_PP-OCRv5_rec_mobile.onnx",
+      "engine": "rapidocr",
+      "kind": "onnx_rec",
+      "bytes": 7904513,
+      "sha256": "b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a",
+      "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-paddleocr"
+    }
+  ],
+  "fonts": [
+    {
+      "key": "noto-sans",
+      "file": "NotoSans-Regular.ttf",
+      "covers": [
+        "Latin",
+        "Greek",
+        "Cyrillic"
+      ],
+      "bytes": 431364,
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "source": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "licence": "OFL-1.1"
+    }
+  ],
+  "must_survive": [],
+  "bench": {
+    "kit": "1.1",
+    "corpus": "public-v1@8d5f4054356b77365bc4bf3b05590f7aa59b4271373805289d7f0a5cf2beff2b",
+    "engine_versions": {
+      "rapidocr": "3.10.0",
+      "tesseract": "5.5.3 (tesserocr 2.12.0)",
+      "vision": "rev3 (macOS 27.2)"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "metrics": {
+          "words": [
+            0.988,
+            0.984,
+            0.9572
+          ],
+          "trigrams": [
+            0.9997,
+            0.9997,
+            0.9816
+          ],
+          "digits": [
+            0.9971,
+            0.9986,
+            0.9741
+          ]
+        },
+        "worst_page": 0.757,
+        "seconds_per_page": 2.3519,
+        "selection": {
+          "policy": "maximin-v2",
+          "margin": 0.0001
+        }
+      }
+    }
+  },
+  "canary": {
+    "file": "canary-en.png",
+    "bytes": 9854,
+    "sha256": "181d7f4f8cd3993507d32629a8da94e6149549e4216a58cfed7686c3eebdeec6",
+    "dpi": 300,
+    "must_find": [
+      "Sunlight",
+      "4521"
+    ]
+  }
+}

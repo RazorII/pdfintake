@@ -1,0 +1,10 @@
+# The canary renderer's libraries, at the exact versions every pack's canary is drawn with.
+# scripts/dev-install.sh installs these (not pyproject.toml's ranges) into the throwaway environment
+# that draws the canaries, so a rebuilt canary keeps its pinned bytes. pdfintake kit wheel refuses
+# to draw a canary when the versions it runs with differ from these. Maintainer-owned.
+fpdf2==2.9.0
+uharfbuzz==0.57.0
+pillow==13.0.0
+pypdfium2==5.14.0
+pikepdf==10.17.0
+fonttools==4.68.0

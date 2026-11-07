@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pdfintake"
+dynamic = ["version"]
+description = "Turn scans, phone photos and PDFs into small, searchable PDFs: lossless image-to-PDF, an OCR text layer and lossless shrinking."
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "RazorII" }]
+keywords = ["pdf", "ocr", "scan", "searchable", "lossless", "tesseract", "image-to-pdf"]
+classifiers = [
+  "Environment :: Console",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Multimedia :: Graphics :: Capture :: Scanners",
+  "Topic :: Office/Business",
+  "Topic :: Text Processing",
+]
+# pdfintake-data-en is the English data wheel (models, font, canary), pinned by URL and sha256.
+# The URL and hash below are PLACEHOLDERS until the data wheel is published:
+# scripts/dev-install.sh overrides this pin, and the release steps replace it.
+dependencies = [
+  "certifi",
+  "fonttools>=4.68,<5",
+  "fpdf2==2.9.0",
+  "numpy>=2.0",
+  "onnxruntime>=1.31",
+  "opencv-python-headless",
+  "pdfintake-data-en @ https://placeholder.invalid/pdfintake-data-en/pdfintake_data_en-1.0.0-py3-none-any.whl#sha256=0000000000000000000000000000000000000000000000000000000000000000",
+  "pikepdf>=10.17,<11",
+  "pillow>=13,<14",
+  "pillow-heif>=1.8",
+  "py3langid==0.4.0",
+  "pyobjc-framework-Vision>=13; sys_platform == 'darwin'",
+  "pypdfium2>=5.14,<6",
+  "rapidocr>=3.10,<4",
+  "tesserocr==2.12.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "jsonschema",
+  "pyhanko>=0.29,<0.30",
+  "pytest>=7",
+  "uharfbuzz==0.57.0",
+]
+kit = ["uharfbuzz==0.57.0"]
+kit-thai = ["pythainlp"]
+
+[project.scripts]
+pdfintake = "pdfintake.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/RazorII/pdfintake"
+Issues = "https://github.com/RazorII/pdfintake/issues"
+
+[tool.hatch.version]
+path = "src/pdfintake/__init__.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdfintake"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/.github", "/claude-plugin"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-ra -p no:cacheprovider"
+markers = [
+  "network: may open sockets beyond loopback; every other test runs with the network blocked (tests/conftest.py)",
+  "cli_subprocess: starts the pdfintake CLI in a subprocess",
+  "vision: needs Apple Vision; scripts/release.sh runs pytest -m vision on the release Mac",
+]

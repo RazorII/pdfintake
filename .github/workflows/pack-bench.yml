@@ -1,0 +1,124 @@
+name: pack-bench
+
+# Re-benches a language pack a pull request changes, on Linux, Windows and macOS, against the
+# numbers the pack claims; or every launch pack when the PR changes core OCR code.
+#
+# Safety: this runs a contributor's pack data, so it triggers on pull_request only (never
+# pull_request_target), reads the repo with a read-only token, and uses no secrets. `kit verify`
+# downloads only from allowlisted hosts, and checks every pinned address before it fetches:
+#   - models and fonts, from the sources the manifest schema allows (langpacks/manifest.py,
+#     SOURCE_PATTERNS): github.com (raw files and release assets, served through the
+#     githubusercontent.com hosts it redirects to) and www.modelscope.cn;
+#   - corpus texts, from the hosts kit/corpus.py allows (TEXT_HOST_RES): <lang>.wikipedia.org,
+#     <lang>.wikisource.org, gutenberg.org (or www.gutenberg.org) and eur-lex.europa.eu. The check
+#     runs whenever corpus.json loads, and a redirect off those hosts is refused.
+# Action versions are pinned to commit SHAs (tests/test_workflows.py).
+# Tolerance (DESIGN §7.3): 0.01 absolute for Tesseract-only reader sets, 0.02 for sets that
+# include Vision; a must-survive floor is absolute.
+
+on:
+  pull_request:
+    paths:
+      - "packs/**"
+      - "src/pdfintake/ocr/**"
+
+permissions:
+  contents: read
+
+jobs:
+  changed:
+    runs-on: ubuntu-24.04
+    outputs:
+      packs: ${{ steps.which.outputs.packs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Which packs to bench
+        id: which
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          from pathlib import Path
+          changed = subprocess.run(["git", "diff", "--name-only", f"{os.environ['BASE_SHA']}...HEAD"],
+                                   check=True, capture_output=True, text=True).stdout.split()
+          ids = re.compile(r"^[a-z]{2,3}(-[a-z0-9]{2,8})?$")
+          launch = sorted(p.parent.name for p in Path("packs").glob("*/manifest.json") if ids.match(p.parent.name))
+          if any(f.startswith("src/pdfintake/ocr/") for f in changed):
+              packs = launch
+          else:
+              touched = {f.split("/")[1] for f in changed if f.startswith("packs/") and f.count("/") >= 2}
+              packs = sorted(p for p in touched if ids.match(p) and Path("packs", p, "manifest.json").is_file())
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"packs={json.dumps(packs)}\n")
+          print("packs to bench:", packs)
+          PY
+
+  bench:
+    needs: changed
+    if: needs.changed.outputs.packs != '[]'
+    name: bench-${{ matrix.pack }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-15]
+        pack: ${{ fromJSON(needs.changed.outputs.packs) }}
+    env:
+      PYTHONUTF8: "1"
+      PDFINTAKE_REQUIRE_VISION: ${{ startsWith(matrix.os, 'macos') && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: Cache folder
+        shell: bash
+        run: echo "PDFINTAKE_CACHE=$RUNNER_TEMP/pdfintake-bench-cache" >> "$GITHUB_ENV"
+      - name: Install
+        shell: bash
+        run: bash scripts/dev-install.sh --python 3.12
+      - name: Verify the pack, download from upstream, re-bench
+        shell: bash
+        env:
+          PACK: ${{ matrix.pack }}
+        run: |
+          rc=0
+          pdfintake kit verify "$PACK" --download --rebench --json > verify.json || rc=$?
+          python - "$PACK" verify.json "$rc" <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          pack, report, rc = sys.argv[1], Path(sys.argv[2]), int(sys.argv[3])
+          try:
+              result = json.loads(report.read_text(encoding="utf-8"))
+          except ValueError:
+              result = {"ok": False, "problems": ["kit verify printed no JSON"]}
+          manifest = json.loads(Path("packs", pack, "manifest.json").read_text(encoding="utf-8"))
+          overrides = {plat: sel["override_reason"]
+                       for plat, row in manifest.get("bench", {}).get("platforms", {}).items()
+                       for sel in [row.get("selection", {})] if sel.get("override_reason")}
+          lines = [f"## {pack} on {os.environ.get('RUNNER_OS', '?')}", "",
+                   f"kit verify exit {rc}, ok: {result.get('ok')}", ""]
+          lines += [f"- {p}" for p in result.get("problems", [])]
+          warnings = result.get("warnings", [])
+          if warnings:
+              lines += ["", "warnings:", ""]
+              lines += [f"- {w}" for w in warnings]
+          rebench = result.get("rebench")
+          if rebench:
+              lines += ["", "```json", json.dumps(rebench, indent=2, ensure_ascii=False)[:20000], "```"]
+          for plat, reason in sorted(overrides.items()):
+              lines.append(f"\n**needs-review**: the {plat} selection is an override: {reason}")
+              print(f"::warning title=needs-review::{pack} {plat}: the kit's choice was overridden: {reason}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("\n".join(lines) + "\n")
+          PY
+          exit "$rc"

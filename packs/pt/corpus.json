@@ -1,0 +1,99 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Água",
+      "revid": 72968719,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=72968719&action=raw",
+      "sha256": "0a0ee6c0738167ebd218d9187e7817771478139fa772de10833688c31a30cf70",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Sol",
+      "revid": 73197256,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=73197256&action=raw",
+      "sha256": "74f81de2c0b9d49f05a128b12f4fc478abe6fd265db1ddbc4025c2748d11c470",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Lua",
+      "revid": 73289764,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=73289764&action=raw",
+      "sha256": "0c126843c8b3c50db09de56cf19ab3f5199e700e5e501a8300fef1b0d2474f99",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Fotossíntese",
+      "revid": 73032270,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=73032270&action=raw",
+      "sha256": "1e413449c6561c4756bd27641812adf6feb2f3f1e9cb448bb2673f1b84c9def9",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Xadrez",
+      "revid": 73370098,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=73370098&action=raw",
+      "sha256": "3d79975fa5fd03ad034c5af1b083c2c8b1c38488f556ef151536eb9ac1bf26b5",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Pão",
+      "revid": 73084145,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=73084145&action=raw",
+      "sha256": "569d9e2bfec542f84307665e536ec48fa49e555893645977396281df92cc93a6",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Vulcão",
+      "revid": 73354359,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=73354359&action=raw",
+      "sha256": "b32d8091fd98dd718c2649900400effbff33af3bbf34bf87ee198e66fd0e8979",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "pt",
+      "title": "Rio",
+      "revid": 73342842,
+      "url": "https://pt.wikipedia.org/w/index.php?oldid=73342842&action=raw",
+      "sha256": "cd4825d2cc7e6a82863604a7a6b122ea7e7c9874fdcdc7843bb605fb21b758dc",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

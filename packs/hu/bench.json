@@ -1,0 +1,5865 @@
+{
+  "kit": "1.1",
+  "corpus": "public-v1@0f0737829b0e88393d4247d77d1c090a811ed295fa52a77ec9d441375a7ac245",
+  "platforms": {
+    "darwin-arm64": {
+      "platform": "darwin-arm64",
+      "engine_versions": {
+        "rapidocr": "3.10.0",
+        "tesseract": "5.5.3 (tesserocr 2.12.0)"
+      },
+      "sets": [
+        {
+          "index": 0,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "tesseract",
+                "engine": "tesseract",
+                "role": "reader",
+                "params": {
+                  "lang": "hun",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "hun"
+                ]
+              },
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "checker",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-det",
+                  "en:rapid-cls",
+                  "en:rapid-rec-latin"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "primary_with_floor",
+              "version": 1,
+              "params": {
+                "primary": "tesseract",
+                "checker": "rapidocr",
+                "floor": 0.5,
+                "min_words": 20,
+                "word_conf": 0.8,
+                "min_len": 4
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "merged": [
+            6
+          ],
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.9623,
+              "scan": 0.9581,
+              "small": 0.9093
+            },
+            "trigrams": {
+              "clean": 0.9965,
+              "scan": 0.9933,
+              "small": 0.9758
+            },
+            "digits": {
+              "clean": 0.9255,
+              "scan": 0.9481,
+              "small": 0.8951
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.9969,
+              "scan": 0.9776,
+              "small": 0.9624
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 321,
+                "survived": 320,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 312,
+                "survived": 305,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 213,
+                "survived": 205,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.5645,
+          "seconds_per_page": 4.3607,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9991007194244604,
+              "digits": null,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.7103,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  36
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9982014388489209,
+              "digits": null,
+              "must": {
+                "double-acute": 0.9722
+              },
+              "seconds": 5.0571,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  35
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9982014388489209,
+              "digits": null,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.8918,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  36
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9920159680638723,
+              "trigrams": 0.9978864734299517,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.736,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  34
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9860279441117764,
+              "trigrams": 0.9948671497584541,
+              "digits": 0.875,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.1678,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  34
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.9940119760479041,
+              "trigrams": 0.9993961352657005,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.5986,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  34
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9759862778730704,
+              "trigrams": 0.9993686868686869,
+              "digits": 0.9838709677419355,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.5223,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9742710120068611,
+              "trigrams": 0.9990530303030303,
+              "digits": 0.9838709677419355,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 4.9842,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9759862778730704,
+              "trigrams": 0.9993686868686869,
+              "digits": 0.967741935483871,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.809,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9090909090909091,
+              "trigrams": 0.9860724233983287,
+              "digits": 0.9529411764705882,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.736,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  30,
+                  30
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9238900634249472,
+              "trigrams": 0.9989554317548747,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.2189,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  31
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9238900634249472,
+              "trigrams": 0.9989554317548747,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 4.0772,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  31
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.195,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.3434,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 0.7954,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.3111,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  6
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.2207,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  6
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9871794871794872,
+              "trigrams": 0.9842931937172775,
+              "digits": 0.9649122807017544,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 0.7631,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  6
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.992,
+              "trigrams": 0.9989862296189913,
+              "digits": 0.9583333333333334,
+              "must": {
+                "double-acute": 0.9935
+              },
+              "seconds": 15.2903,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  154,
+                  153
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.9515,
+              "trigrams": 0.9642645940694433,
+              "digits": 0.9444444444444444,
+              "must": {
+                "double-acute": 0.9583
+              },
+              "seconds": 12.0031,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  144,
+                  138
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.5645,
+              "trigrams": 0.835177832221002,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 0.8222
+              },
+              "seconds": 7.3862,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  45,
+                  37
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.8513,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.7311,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.2563,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "tesseract",
+                "engine": "tesseract",
+                "role": "reader",
+                "params": {
+                  "lang": "eng",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "en:eng"
+                ]
+              },
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "checker",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "single",
+              "version": 1,
+              "params": {
+                "reader": "tesseract"
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.6824,
+              "scan": 0.6986,
+              "small": 0.73
+            },
+            "trigrams": {
+              "clean": 0.8112,
+              "scan": 0.8256,
+              "small": 0.8472
+            },
+            "digits": {
+              "clean": 0.9405,
+              "scan": 0.9544,
+              "small": 0.9286
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.05,
+              "scan": null,
+              "small": 0.0
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 20,
+                "survived": 1,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 12,
+                "survived": 1,
+                "measurable": false
+              },
+              "small": {
+                "truth": 323,
+                "read": 82,
+                "survived": 0,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.5528,
+          "seconds_per_page": 3.046,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.6875,
+              "trigrams": 0.7937649880095923,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.6456,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.7043918918918919,
+              "trigrams": 0.8099520383693045,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.4339,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  2,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.7415540540540541,
+              "trigrams": 0.8318345323741008,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.4944,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.6526946107784432,
+              "trigrams": 0.8016304347826086,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.6814,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.7065868263473054,
+              "trigrams": 0.8414855072463768,
+              "digits": 0.875,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.4568,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.7584830339321357,
+              "trigrams": 0.8719806763285024,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.7243,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.6706689536878216,
+              "trigrams": 0.7859848484848485,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.6618,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  3,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.6946826758147513,
+              "trigrams": 0.8121843434343434,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.4719,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.7358490566037735,
+              "trigrams": 0.8409090909090909,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 2.6118,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.6025369978858351,
+              "trigrams": 0.7952646239554317,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.125
+              },
+              "seconds": 3.7962,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  8,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.6490486257928119,
+              "trigrams": 0.825208913649025,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.25
+              },
+              "seconds": 3.5716,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  4,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.6892177589852009,
+              "trigrams": 0.8551532033426184,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.8494,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  4,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.7894736842105263,
+              "trigrams": 0.8169014084507042,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 1.0377,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.7763157894736842,
+              "trigrams": 0.8140845070422535,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.9087,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.868421052631579,
+              "trigrams": 0.8732394366197183,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.5602,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.8076923076923077,
+              "trigrams": 0.8507853403141361,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.9171,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.7948717948717948,
+              "trigrams": 0.8350785340314136,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.8448,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.8461538461538461,
+              "trigrams": 0.8612565445026178,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.5501,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.6955,
+              "trigrams": 0.8187040635296106,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 9.9832,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.7105,
+              "trigrams": 0.8341640618399933,
+              "digits": 0.9722222222222222,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 8.7238,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  3,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.6105,
+              "trigrams": 0.7957252682267466,
+              "digits": 0.9166666666666666,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 6.6392,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  76,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.5527950310559007,
+              "trigrams": 0.8265895953757225,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2288,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.5527950310559007,
+              "trigrams": 0.8323699421965318,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.3197,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.5900621118012422,
+              "trigrams": 0.8473988439306358,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.9917,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "tesseract",
+                "engine": "tesseract",
+                "role": "reader",
+                "params": {
+                  "lang": "eng",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "en:eng"
+                ]
+              },
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "checker",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "primary_with_floor",
+              "version": 1,
+              "params": {
+                "primary": "tesseract",
+                "checker": "rapidocr",
+                "floor": 0.5,
+                "min_words": 20,
+                "word_conf": 0.8,
+                "min_len": 4
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.6824,
+              "scan": 0.6986,
+              "small": 0.73
+            },
+            "trigrams": {
+              "clean": 0.8112,
+              "scan": 0.8256,
+              "small": 0.8472
+            },
+            "digits": {
+              "clean": 0.9405,
+              "scan": 0.9544,
+              "small": 0.9286
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.05,
+              "scan": null,
+              "small": 0.0
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 20,
+                "survived": 1,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 12,
+                "survived": 1,
+                "measurable": false
+              },
+              "small": {
+                "truth": 323,
+                "read": 82,
+                "survived": 0,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.5528,
+          "seconds_per_page": 3.1629,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.6875,
+              "trigrams": 0.7937649880095923,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.7699,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.7043918918918919,
+              "trigrams": 0.8099520383693045,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.5194,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  2,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.7415540540540541,
+              "trigrams": 0.8318345323741008,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.7303,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.6526946107784432,
+              "trigrams": 0.8016304347826086,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.7928,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.7065868263473054,
+              "trigrams": 0.8414855072463768,
+              "digits": 0.875,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.6328,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.7584830339321357,
+              "trigrams": 0.8719806763285024,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.778,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.6706689536878216,
+              "trigrams": 0.7859848484848485,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.8823,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  3,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.6946826758147513,
+              "trigrams": 0.8121843434343434,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.6292,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.7358490566037735,
+              "trigrams": 0.8409090909090909,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 2.704,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.6025369978858351,
+              "trigrams": 0.7952646239554317,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.125
+              },
+              "seconds": 3.8393,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  8,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.6490486257928119,
+              "trigrams": 0.825208913649025,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.25
+              },
+              "seconds": 3.6869,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  4,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.6892177589852009,
+              "trigrams": 0.8551532033426184,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.9274,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  4,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.7894736842105263,
+              "trigrams": 0.8169014084507042,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 1.0314,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.7763157894736842,
+              "trigrams": 0.8140845070422535,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.8982,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.868421052631579,
+              "trigrams": 0.8732394366197183,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.5915,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.8076923076923077,
+              "trigrams": 0.8507853403141361,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.9671,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.7948717948717948,
+              "trigrams": 0.8350785340314136,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.9112,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.8461538461538461,
+              "trigrams": 0.8612565445026178,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.5623,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.6955,
+              "trigrams": 0.8187040635296106,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 10.5128,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.7105,
+              "trigrams": 0.8341640618399933,
+              "digits": 0.9722222222222222,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 8.8873,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  3,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.6105,
+              "trigrams": 0.7957252682267466,
+              "digits": 0.9166666666666666,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 6.9038,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  76,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.5527950310559007,
+              "trigrams": 0.8265895953757225,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2641,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.5527950310559007,
+              "trigrams": 0.8323699421965318,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.3842,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.5900621118012422,
+              "trigrams": 0.8473988439306358,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 1.1024,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "tesseract2",
+                "engine": "tesseract",
+                "role": "reader",
+                "params": {
+                  "lang": "hun",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "hun"
+                ]
+              },
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "checker",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "single",
+              "version": 1,
+              "params": {
+                "reader": "tesseract2"
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.9623,
+              "scan": 0.9581,
+              "small": 0.9093
+            },
+            "trigrams": {
+              "clean": 0.9965,
+              "scan": 0.9933,
+              "small": 0.9758
+            },
+            "digits": {
+              "clean": 0.9255,
+              "scan": 0.9481,
+              "small": 0.8951
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.9969,
+              "scan": 0.9776,
+              "small": 0.9624
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 321,
+                "survived": 320,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 312,
+                "survived": 305,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 213,
+                "survived": 205,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.5645,
+          "seconds_per_page": 4.5983,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9991007194244604,
+              "digits": null,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.9912,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  36
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9982014388489209,
+              "digits": null,
+              "must": {
+                "double-acute": 0.9722
+              },
+              "seconds": 5.2614,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  35
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9982014388489209,
+              "digits": null,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.7804,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  36
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9920159680638723,
+              "trigrams": 0.9978864734299517,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 6.0524,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  34
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9860279441117764,
+              "trigrams": 0.9948671497584541,
+              "digits": 0.875,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.6079,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  34
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.9940119760479041,
+              "trigrams": 0.9993961352657005,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.9629,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  34
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9759862778730704,
+              "trigrams": 0.9993686868686869,
+              "digits": 0.9838709677419355,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 6.006,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9742710120068611,
+              "trigrams": 0.9990530303030303,
+              "digits": 0.9838709677419355,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.3562,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9759862778730704,
+              "trigrams": 0.9993686868686869,
+              "digits": 0.967741935483871,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 4.0271,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9090909090909091,
+              "trigrams": 0.9860724233983287,
+              "digits": 0.9529411764705882,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 6.0879,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  30,
+                  30
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9238900634249472,
+              "trigrams": 0.9989554317548747,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.5588,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  31
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9238900634249472,
+              "trigrams": 0.9989554317548747,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 4.353,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  31
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.282,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.3307,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 0.845,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.392,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  6
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.2559,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  6
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9871794871794872,
+              "trigrams": 0.9842931937172775,
+              "digits": 0.9649122807017544,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 0.8084,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  6
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.992,
+              "trigrams": 0.9989862296189913,
+              "digits": 0.9583333333333334,
+              "must": {
+                "double-acute": 0.9935
+              },
+              "seconds": 15.8182,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  154,
+                  153
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.9515,
+              "trigrams": 0.9642645940694433,
+              "digits": 0.9444444444444444,
+              "must": {
+                "double-acute": 0.9583
+              },
+              "seconds": 12.5913,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  144,
+                  138
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.5645,
+              "trigrams": 0.835177832221002,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 0.8222
+              },
+              "seconds": 7.9043,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  45,
+                  37
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.9334,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.8442,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.308,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "reader",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "single",
+              "version": 1,
+              "params": {
+                "reader": "rapidocr"
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 1,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.937,
+              "scan": 0.9105,
+              "small": 0.886
+            },
+            "trigrams": {
+              "clean": 0.9707,
+              "scan": 0.9599,
+              "small": 0.9427
+            },
+            "digits": {
+              "clean": 1.0,
+              "scan": 1.0,
+              "small": 0.9861
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.192,
+              "scan": 0.0374,
+              "small": 0.1205
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 323,
+                "survived": 62,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 321,
+                "survived": 12,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 249,
+                "survived": 30,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.634,
+          "seconds_per_page": 2.1549,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.964527027027027,
+              "trigrams": 0.980515587529976,
+              "digits": null,
+              "must": {
+                "double-acute": 0.4167
+              },
+              "seconds": 2.5877,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  15
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9442567567567568,
+              "trigrams": 0.9688249400479616,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0278
+              },
+              "seconds": 2.545,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9493243243243243,
+              "trigrams": 0.9715227817745803,
+              "digits": null,
+              "must": {
+                "double-acute": 0.1111
+              },
+              "seconds": 2.2768,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9481037924151696,
+              "trigrams": 0.9767512077294686,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2353
+              },
+              "seconds": 2.6503,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  8
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9341317365269461,
+              "trigrams": 0.9704106280193237,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0294
+              },
+              "seconds": 2.4581,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.93812375249501,
+              "trigrams": 0.972524154589372,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1176
+              },
+              "seconds": 2.1127,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9605488850771869,
+              "trigrams": 0.9791666666666666,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.5111
+              },
+              "seconds": 2.557,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  23
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9245283018867925,
+              "trigrams": 0.9633838383838383,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1556
+              },
+              "seconds": 2.4318,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  7
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9451114922813036,
+              "trigrams": 0.9706439393939394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3111
+              },
+              "seconds": 2.1655,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  14
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9556025369978859,
+              "trigrams": 0.9756267409470752,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3548
+              },
+              "seconds": 2.5551,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9365750528541226,
+              "trigrams": 0.9686629526462396,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0645
+              },
+              "seconds": 2.5063,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9429175475687104,
+              "trigrams": 0.9697075208913649,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1613
+              },
+              "seconds": 2.1734,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.9736842105263158,
+              "trigrams": 0.9746478873239437,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.4
+              },
+              "seconds": 0.6751,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.6271,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2
+              },
+              "seconds": 0.446,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.6899,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.6979,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.4548,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.9195,
+              "trigrams": 0.9582664526484751,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 5.9728,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  155,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.885,
+              "trigrams": 0.9386668919489736,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0065
+              },
+              "seconds": 5.8517,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  153,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.634,
+              "trigrams": 0.784573794035651,
+              "digits": 0.9027777777777778,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 4.392,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  81,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8385093167701864,
+              "trigrams": 0.9676300578034682,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2727
+              },
+              "seconds": 1.0736,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  3
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.7763975155279503,
+              "trigrams": 0.9583815028901734,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.031,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.7950310559006211,
+              "trigrams": 0.9618497109826589,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1818
+              },
+              "seconds": 0.7863,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  2
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "reader",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              },
+              {
+                "id": "tesseract",
+                "engine": "tesseract",
+                "role": "checker",
+                "params": {
+                  "lang": "eng",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "en:eng"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "single",
+              "version": 1,
+              "params": {
+                "reader": "rapidocr"
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.937,
+              "scan": 0.9105,
+              "small": 0.886
+            },
+            "trigrams": {
+              "clean": 0.9707,
+              "scan": 0.96,
+              "small": 0.9429
+            },
+            "digits": {
+              "clean": 1.0,
+              "scan": 1.0,
+              "small": 0.9861
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.192,
+              "scan": 0.0374,
+              "small": 0.1205
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 323,
+                "survived": 62,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 321,
+                "survived": 12,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 249,
+                "survived": 30,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.634,
+          "seconds_per_page": 3.1363,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.964527027027027,
+              "trigrams": 0.980515587529976,
+              "digits": null,
+              "must": {
+                "double-acute": 0.4167
+              },
+              "seconds": 3.9776,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  15
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9442567567567568,
+              "trigrams": 0.9688249400479616,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0278
+              },
+              "seconds": 3.6794,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9493243243243243,
+              "trigrams": 0.9715227817745803,
+              "digits": null,
+              "must": {
+                "double-acute": 0.1111
+              },
+              "seconds": 2.9801,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9481037924151696,
+              "trigrams": 0.9767512077294686,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2353
+              },
+              "seconds": 3.9604,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  8
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9341317365269461,
+              "trigrams": 0.9704106280193237,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0294
+              },
+              "seconds": 3.596,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.93812375249501,
+              "trigrams": 0.9728260869565217,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1176
+              },
+              "seconds": 2.8471,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9605488850771869,
+              "trigrams": 0.9791666666666666,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.5111
+              },
+              "seconds": 3.9353,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  23
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9245283018867925,
+              "trigrams": 0.9633838383838383,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1556
+              },
+              "seconds": 3.6474,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  7
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9451114922813036,
+              "trigrams": 0.9706439393939394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3111
+              },
+              "seconds": 2.7629,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  14
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9556025369978859,
+              "trigrams": 0.9756267409470752,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3548
+              },
+              "seconds": 3.779,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9365750528541226,
+              "trigrams": 0.9686629526462396,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0645
+              },
+              "seconds": 3.5365,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9429175475687104,
+              "trigrams": 0.9697075208913649,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1613
+              },
+              "seconds": 2.8169,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.9736842105263158,
+              "trigrams": 0.9746478873239437,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.4
+              },
+              "seconds": 0.8998,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.8257,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2
+              },
+              "seconds": 0.5395,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.9176,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.91,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.5631,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.9195,
+              "trigrams": 0.9582664526484751,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 9.7373,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  155,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.885,
+              "trigrams": 0.9386668919489736,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0065
+              },
+              "seconds": 8.4684,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  153,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.634,
+              "trigrams": 0.784573794035651,
+              "digits": 0.9027777777777778,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 6.78,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  81,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8385093167701864,
+              "trigrams": 0.9676300578034682,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2727
+              },
+              "seconds": 1.5718,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  3
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.7763975155279503,
+              "trigrams": 0.9595375722543352,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.5115,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.7950310559006211,
+              "trigrams": 0.9630057803468208,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1818
+              },
+              "seconds": 1.0283,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  2
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "reader",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              },
+              {
+                "id": "tesseract",
+                "engine": "tesseract",
+                "role": "checker",
+                "params": {
+                  "lang": "eng",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "en:eng"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "primary_with_floor",
+              "version": 1,
+              "params": {
+                "primary": "rapidocr",
+                "checker": "tesseract",
+                "floor": 0.5,
+                "min_words": 20,
+                "word_conf": 0.8,
+                "min_len": 4
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.937,
+              "scan": 0.9105,
+              "small": 0.886
+            },
+            "trigrams": {
+              "clean": 0.9707,
+              "scan": 0.96,
+              "small": 0.9429
+            },
+            "digits": {
+              "clean": 1.0,
+              "scan": 1.0,
+              "small": 0.9861
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.192,
+              "scan": 0.0374,
+              "small": 0.1205
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 323,
+                "survived": 62,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 321,
+                "survived": 12,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 249,
+                "survived": 30,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.634,
+          "seconds_per_page": 3.0755,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.964527027027027,
+              "trigrams": 0.980515587529976,
+              "digits": null,
+              "must": {
+                "double-acute": 0.4167
+              },
+              "seconds": 3.8647,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  15
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9442567567567568,
+              "trigrams": 0.9688249400479616,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0278
+              },
+              "seconds": 3.5755,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9493243243243243,
+              "trigrams": 0.9715227817745803,
+              "digits": null,
+              "must": {
+                "double-acute": 0.1111
+              },
+              "seconds": 2.919,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9481037924151696,
+              "trigrams": 0.9767512077294686,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2353
+              },
+              "seconds": 3.8476,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  8
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9341317365269461,
+              "trigrams": 0.9704106280193237,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0294
+              },
+              "seconds": 3.472,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.93812375249501,
+              "trigrams": 0.9728260869565217,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1176
+              },
+              "seconds": 2.8601,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9605488850771869,
+              "trigrams": 0.9791666666666666,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.5111
+              },
+              "seconds": 3.8064,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  23
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9245283018867925,
+              "trigrams": 0.9633838383838383,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1556
+              },
+              "seconds": 3.5267,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  7
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9451114922813036,
+              "trigrams": 0.9706439393939394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3111
+              },
+              "seconds": 2.8132,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  14
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9556025369978859,
+              "trigrams": 0.9756267409470752,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3548
+              },
+              "seconds": 3.6957,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9365750528541226,
+              "trigrams": 0.9686629526462396,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0645
+              },
+              "seconds": 3.5239,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9429175475687104,
+              "trigrams": 0.9697075208913649,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1613
+              },
+              "seconds": 2.8114,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.9736842105263158,
+              "trigrams": 0.9746478873239437,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.4
+              },
+              "seconds": 0.8916,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.8453,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2
+              },
+              "seconds": 0.5321,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.8937,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.8803,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.5416,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.9195,
+              "trigrams": 0.9582664526484751,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 9.425,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  155,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.885,
+              "trigrams": 0.9386668919489736,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0065
+              },
+              "seconds": 8.2345,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  153,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.634,
+              "trigrams": 0.784573794035651,
+              "digits": 0.9027777777777778,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 6.7254,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  81,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8385093167701864,
+              "trigrams": 0.9676300578034682,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2727
+              },
+              "seconds": 1.5696,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  3
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.7763975155279503,
+              "trigrams": 0.9595375722543352,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.5123,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.7950310559006211,
+              "trigrams": 0.9630057803468208,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1818
+              },
+              "seconds": 1.0439,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  2
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "reader",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              },
+              {
+                "id": "tesseract2",
+                "engine": "tesseract",
+                "role": "checker",
+                "params": {
+                  "lang": "hun",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "hun"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "single",
+              "version": 1,
+              "params": {
+                "reader": "rapidocr"
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.9371,
+              "scan": 0.9109,
+              "small": 0.8887
+            },
+            "trigrams": {
+              "clean": 0.9707,
+              "scan": 0.9603,
+              "small": 0.9442
+            },
+            "digits": {
+              "clean": 1.0,
+              "scan": 1.0,
+              "small": 0.9881
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.192,
+              "scan": 0.0374,
+              "small": 0.1205
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 323,
+                "survived": 62,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 321,
+                "survived": 12,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 249,
+                "survived": 30,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.6345,
+          "seconds_per_page": 4.5984,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.964527027027027,
+              "trigrams": 0.980515587529976,
+              "digits": null,
+              "must": {
+                "double-acute": 0.4167
+              },
+              "seconds": 6.1701,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  15
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9442567567567568,
+              "trigrams": 0.9688249400479616,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0278
+              },
+              "seconds": 5.4235,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9493243243243243,
+              "trigrams": 0.9715227817745803,
+              "digits": null,
+              "must": {
+                "double-acute": 0.1111
+              },
+              "seconds": 4.2434,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9481037924151696,
+              "trigrams": 0.9767512077294686,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2353
+              },
+              "seconds": 6.1511,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  8
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9341317365269461,
+              "trigrams": 0.9704106280193237,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0294
+              },
+              "seconds": 5.4315,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.9401197604790419,
+              "trigrams": 0.9731280193236715,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1176
+              },
+              "seconds": 4.0783,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9605488850771869,
+              "trigrams": 0.9791666666666666,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.5111
+              },
+              "seconds": 6.0252,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  23
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9245283018867925,
+              "trigrams": 0.9633838383838383,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1556
+              },
+              "seconds": 5.4111,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  7
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9451114922813036,
+              "trigrams": 0.9706439393939394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3111
+              },
+              "seconds": 3.9774,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  14
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9556025369978859,
+              "trigrams": 0.9756267409470752,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3548
+              },
+              "seconds": 5.7571,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9365750528541226,
+              "trigrams": 0.9686629526462396,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0645
+              },
+              "seconds": 5.1957,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9429175475687104,
+              "trigrams": 0.9697075208913649,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1613
+              },
+              "seconds": 4.1162,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.9736842105263158,
+              "trigrams": 0.9746478873239437,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.4
+              },
+              "seconds": 1.1987,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.1107,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.9605263157894737,
+              "trigrams": 0.9661971830985916,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2
+              },
+              "seconds": 0.7292,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2782,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2445,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.7644,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.92,
+              "trigrams": 0.9585198952437273,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 15.7383,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  155,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.888,
+              "trigrams": 0.9418771648221678,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0065
+              },
+              "seconds": 12.2053,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  153,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.6345,
+              "trigrams": 0.784573794035651,
+              "digits": 0.9166666666666666,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 8.3465,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  81,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8385093167701864,
+              "trigrams": 0.9676300578034682,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2727
+              },
+              "seconds": 2.2372,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  3
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.7763975155279503,
+              "trigrams": 0.9583815028901734,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.1729,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.8012422360248447,
+              "trigrams": 0.9653179190751445,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1818
+              },
+              "seconds": 1.3558,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  2
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "reader",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              },
+              {
+                "id": "tesseract2",
+                "engine": "tesseract",
+                "role": "checker",
+                "params": {
+                  "lang": "hun",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "hun"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "primary_with_floor",
+              "version": 1,
+              "params": {
+                "primary": "rapidocr",
+                "checker": "tesseract2",
+                "floor": 0.5,
+                "min_words": 20,
+                "word_conf": 0.8,
+                "min_len": 4
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.9371,
+              "scan": 0.9109,
+              "small": 0.8887
+            },
+            "trigrams": {
+              "clean": 0.9707,
+              "scan": 0.9603,
+              "small": 0.9442
+            },
+            "digits": {
+              "clean": 1.0,
+              "scan": 1.0,
+              "small": 0.9881
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.192,
+              "scan": 0.0374,
+              "small": 0.1205
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 323,
+                "survived": 62,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 321,
+                "survived": 12,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 249,
+                "survived": 30,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.6345,
+          "seconds_per_page": 4.5528,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.964527027027027,
+              "trigrams": 0.980515587529976,
+              "digits": null,
+              "must": {
+                "double-acute": 0.4167
+              },
+              "seconds": 5.9578,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  15
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9442567567567568,
+              "trigrams": 0.9688249400479616,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0278
+              },
+              "seconds": 5.3325,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9493243243243243,
+              "trigrams": 0.9715227817745803,
+              "digits": null,
+              "must": {
+                "double-acute": 0.1111
+              },
+              "seconds": 4.1364,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9481037924151696,
+              "trigrams": 0.9767512077294686,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2353
+              },
+              "seconds": 6.0798,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  8
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9341317365269461,
+              "trigrams": 0.9704106280193237,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0294
+              },
+              "seconds": 5.3102,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.9401197604790419,
+              "trigrams": 0.9731280193236715,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1176
+              },
+              "seconds": 4.0129,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  4
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9605488850771869,
+              "trigrams": 0.9791666666666666,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.5111
+              },
+              "seconds": 5.9569,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  23
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9245283018867925,
+              "trigrams": 0.9633838383838383,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1556
+              },
+              "seconds": 5.3338,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  7
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9451114922813036,
+              "trigrams": 0.9706439393939394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3111
+              },
+              "seconds": 3.9667,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  14
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9556025369978859,
+              "trigrams": 0.9756267409470752,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3548
+              },
+              "seconds": 5.6811,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9365750528541226,
+              "trigrams": 0.9686629526462396,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0645
+              },
+              "seconds": 5.0967,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9429175475687104,
+              "trigrams": 0.9697075208913649,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1613
+              },
+              "seconds": 4.0081,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.9736842105263158,
+              "trigrams": 0.9746478873239437,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.4
+              },
+              "seconds": 1.1681,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.9473684210526315,
+              "trigrams": 0.9577464788732394,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.0967,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.9605263157894737,
+              "trigrams": 0.9661971830985916,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2
+              },
+              "seconds": 0.7109,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2839,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2141,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.7573,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.92,
+              "trigrams": 0.9585198952437273,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 15.7319,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  155,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.888,
+              "trigrams": 0.9418771648221678,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0065
+              },
+              "seconds": 12.249,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  153,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.6345,
+              "trigrams": 0.784573794035651,
+              "digits": 0.9166666666666666,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 8.3228,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  81,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8385093167701864,
+              "trigrams": 0.9676300578034682,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2727
+              },
+              "seconds": 2.305,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  3
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.7763975155279503,
+              "trigrams": 0.9583815028901734,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.2279,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.8012422360248447,
+              "trigrams": 0.9653179190751445,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1818
+              },
+              "seconds": 1.3263,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  2
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "tesseract",
+                "engine": "tesseract",
+                "role": "reader",
+                "params": {
+                  "lang": "eng",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "en:eng"
+                ]
+              },
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "reader",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "corroborated_trigrams",
+              "version": 1,
+              "params": {
+                "script": "Latin",
+                "tie_order": [
+                  "tesseract",
+                  "rapidocr"
+                ],
+                "corroborators": []
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.6141,
+              "scan": 0.6095,
+              "small": 0.6116
+            },
+            "trigrams": {
+              "clean": 0.7594,
+              "scan": 0.756,
+              "small": 0.7622
+            },
+            "digits": {
+              "clean": 0.9405,
+              "scan": 0.9524,
+              "small": 0.9216
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": null,
+              "scan": null,
+              "small": 0.0
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 16,
+                "survived": 0,
+                "measurable": false
+              },
+              "scan": {
+                "truth": 323,
+                "read": 8,
+                "survived": 0,
+                "measurable": false
+              },
+              "small": {
+                "truth": 323,
+                "read": 82,
+                "survived": 0,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.5093,
+          "seconds_per_page": 2.9559,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.6300675675675675,
+              "trigrams": 0.7556954436450839,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.6592,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.6199324324324325,
+              "trigrams": 0.75689448441247,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.4006,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  2,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.6165540540540541,
+              "trigrams": 0.749400479616307,
+              "digits": null,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 2.6341,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.590818363273453,
+              "trigrams": 0.758756038647343,
+              "digits": 0.75,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 3.6666,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.590818363273453,
+              "trigrams": 0.7608695652173914,
+              "digits": 0.875,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 3.4906,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.590818363273453,
+              "trigrams": 0.7605676328502415,
+              "digits": 0.75,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 2.7031,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.5986277873070326,
+              "trigrams": 0.7310606060606061,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.7134,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  3,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.6003430531732419,
+              "trigrams": 0.7329545454545454,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.4534,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.5900514579759862,
+              "trigrams": 0.7275883838383839,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 2.6,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.5602536997885835,
+              "trigrams": 0.754874651810585,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.6688,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  5,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.5792811839323467,
+              "trigrams": 0.7775069637883009,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 3.4685,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.5750528541226215,
+              "trigrams": 0.7750696378830083,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 2.7519,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 0.7105263157894737,
+              "trigrams": 0.7718309859154929,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 1.0031,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 0.7105263157894737,
+              "trigrams": 0.7718309859154929,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.8577,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 0.7105263157894737,
+              "trigrams": 0.7633802816901408,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.5421,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.7051282051282052,
+              "trigrams": 0.7696335078534031,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.9077,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.7051282051282052,
+              "trigrams": 0.7670157068062827,
+              "digits": 1.0,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.8546,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.6666666666666666,
+              "trigrams": 0.7486910994764397,
+              "digits": 0.9649122807017544,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 0.5328,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.608,
+              "trigrams": 0.7414040719776971,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 9.1847,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.561,
+              "trigrams": 0.6902931486018417,
+              "digits": 0.9583333333333334,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 8.0778,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  3,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.634,
+              "trigrams": 0.784573794035651,
+              "digits": 0.9027777777777778,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 6.3157,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  81,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.5093167701863354,
+              "trigrams": 0.791907514450867,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.205,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.5093167701863354,
+              "trigrams": 0.7907514450867053,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2425,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  1,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.5093167701863354,
+              "trigrams": 0.7884393063583816,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": null
+              },
+              "seconds": 1.0074,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "reader_set": {
+            "engines": [
+              {
+                "id": "tesseract2",
+                "engine": "tesseract",
+                "role": "reader",
+                "params": {
+                  "lang": "hun",
+                  "psm": 3,
+                  "timeout_s": 300.0
+                },
+                "models": [
+                  "hun"
+                ]
+              },
+              {
+                "id": "rapidocr",
+                "engine": "rapidocr",
+                "role": "reader",
+                "params": {
+                  "rec": "en:rapid-rec-latin",
+                  "use_cls": false,
+                  "min_score": 0.5
+                },
+                "models": [
+                  "en:rapid-rec-latin",
+                  "en:rapid-cls",
+                  "en:rapid-det"
+                ]
+              }
+            ],
+            "pick": {
+              "rule": "corroborated_trigrams",
+              "version": 1,
+              "params": {
+                "script": "Latin",
+                "tie_order": [
+                  "tesseract2",
+                  "rapidocr"
+                ],
+                "corroborators": []
+              }
+            },
+            "fallback": "none"
+          },
+          "engines": 2,
+          "vision": false,
+          "primary_metric": "words",
+          "ok": true,
+          "failed_reads": 0,
+          "metrics": {
+            "words": {
+              "clean": 0.9455,
+              "scan": 0.9303,
+              "small": 0.914
+            },
+            "trigrams": {
+              "clean": 0.9816,
+              "scan": 0.9736,
+              "small": 0.9618
+            },
+            "digits": {
+              "clean": 0.9739,
+              "scan": 0.9739,
+              "small": 0.922
+            }
+          },
+          "must": {
+            "double-acute": {
+              "clean": 0.3591,
+              "scan": 0.2056,
+              "small": 0.5462
+            }
+          },
+          "must_coverage": {
+            "double-acute": {
+              "clean": {
+                "truth": 323,
+                "read": 323,
+                "survived": 116,
+                "measurable": true
+              },
+              "scan": {
+                "truth": 323,
+                "read": 321,
+                "survived": 66,
+                "measurable": true
+              },
+              "small": {
+                "truth": 323,
+                "read": 249,
+                "survived": 136,
+                "measurable": true
+              }
+            }
+          },
+          "worst_page": 0.634,
+          "seconds_per_page": 4.4521,
+          "pages": [
+            {
+              "page": "prose-0-clean",
+              "cond": "clean",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9991007194244604,
+              "digits": null,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.8203,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  36
+                ]
+              }
+            },
+            {
+              "page": "prose-0-scan",
+              "cond": "scan",
+              "words": 0.9442567567567568,
+              "trigrams": 0.9688249400479616,
+              "digits": null,
+              "must": {
+                "double-acute": 0.0278
+              },
+              "seconds": 5.047,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-0-small",
+              "cond": "small",
+              "words": 0.9966216216216216,
+              "trigrams": 0.9982014388489209,
+              "digits": null,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.6473,
+              "must_counts": {
+                "double-acute": [
+                  36,
+                  36,
+                  36
+                ]
+              }
+            },
+            {
+              "page": "prose-1-clean",
+              "cond": "clean",
+              "words": 0.9481037924151696,
+              "trigrams": 0.9767512077294686,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.2353
+              },
+              "seconds": 5.8749,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  8
+                ]
+              }
+            },
+            {
+              "page": "prose-1-scan",
+              "cond": "scan",
+              "words": 0.9341317365269461,
+              "trigrams": 0.9704106280193237,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0294
+              },
+              "seconds": 5.5074,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "prose-1-small",
+              "cond": "small",
+              "words": 0.9940119760479041,
+              "trigrams": 0.998792270531401,
+              "digits": 0.75,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.9175,
+              "must_counts": {
+                "double-acute": [
+                  34,
+                  34,
+                  34
+                ]
+              }
+            },
+            {
+              "page": "prose-2-clean",
+              "cond": "clean",
+              "words": 0.9759862778730704,
+              "trigrams": 0.9993686868686869,
+              "digits": 0.9838709677419355,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.7812,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-2-scan",
+              "cond": "scan",
+              "words": 0.9742710120068611,
+              "trigrams": 0.9984217171717171,
+              "digits": 0.9838709677419355,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 5.2354,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-2-small",
+              "cond": "small",
+              "words": 0.9759862778730704,
+              "trigrams": 0.9993686868686869,
+              "digits": 0.967741935483871,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 3.8886,
+              "must_counts": {
+                "double-acute": [
+                  45,
+                  45,
+                  45
+                ]
+              }
+            },
+            {
+              "page": "prose-3-clean",
+              "cond": "clean",
+              "words": 0.9556025369978859,
+              "trigrams": 0.9756267409470752,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.3548
+              },
+              "seconds": 5.8802,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "prose-3-scan",
+              "cond": "scan",
+              "words": 0.9365750528541226,
+              "trigrams": 0.9686629526462396,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0645
+              },
+              "seconds": 5.4796,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  2
+                ]
+              }
+            },
+            {
+              "page": "prose-3-small",
+              "cond": "small",
+              "words": 0.9429175475687104,
+              "trigrams": 0.9697075208913649,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.1613
+              },
+              "seconds": 4.2457,
+              "must_counts": {
+                "double-acute": [
+                  31,
+                  31,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-clean",
+              "cond": "clean",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.2424,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-scan",
+              "cond": "scan",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.3079,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-0-small",
+              "cond": "small",
+              "words": 1.0,
+              "trigrams": 1.0,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 0.8277,
+              "must_counts": {
+                "double-acute": [
+                  5,
+                  5,
+                  5
+                ]
+              }
+            },
+            {
+              "page": "form-1-clean",
+              "cond": "clean",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.3798,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-scan",
+              "cond": "scan",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 1.2465,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "form-1-small",
+              "cond": "small",
+              "words": 0.9358974358974359,
+              "trigrams": 0.9528795811518325,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 0.8168,
+              "must_counts": {
+                "double-acute": [
+                  6,
+                  6,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-clean",
+              "cond": "clean",
+              "words": 0.9195,
+              "trigrams": 0.9582664526484751,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 15.3384,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  155,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-scan",
+              "cond": "scan",
+              "words": 0.885,
+              "trigrams": 0.9386668919489736,
+              "digits": 1.0,
+              "must": {
+                "double-acute": 0.0065
+              },
+              "seconds": 11.6487,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  153,
+                  1
+                ]
+              }
+            },
+            {
+              "page": "microprint-0-small",
+              "cond": "small",
+              "words": 0.634,
+              "trigrams": 0.784573794035651,
+              "digits": 0.9027777777777778,
+              "must": {
+                "double-acute": 0.0
+              },
+              "seconds": 7.7591,
+              "must_counts": {
+                "double-acute": [
+                  155,
+                  81,
+                  0
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-clean",
+              "cond": "clean",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.8732,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-scan",
+              "cond": "scan",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.7857,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            },
+            {
+              "page": "mixed_script-0-small",
+              "cond": "small",
+              "words": 0.8322981366459627,
+              "trigrams": 0.9907514450867052,
+              "digits": 0.8333333333333334,
+              "must": {
+                "double-acute": 1.0
+              },
+              "seconds": 1.3002,
+              "must_counts": {
+                "double-acute": [
+                  11,
+                  11,
+                  11
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

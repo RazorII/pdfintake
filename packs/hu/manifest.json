@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "id": "hu",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "Hungarian",
+  "languages": [
+    {
+      "tag": "hu",
+      "iso639_3": "hun",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "hu"
+      ]
+    },
+    "function_words": {
+      "words": [
+        "és",
+        "hogy",
+        "az",
+        "egy",
+        "vagy",
+        "csak",
+        "már",
+        "még",
+        "kell",
+        "lesz",
+        "volt",
+        "ezt",
+        "azt",
+        "ez",
+        "pedig",
+        "illetve",
+        "valamint",
+        "szerint",
+        "alapján",
+        "között",
+        "részére",
+        "után",
+        "által",
+        "amely",
+        "amelyet",
+        "amelyek",
+        "továbbá",
+        "mint",
+        "meg",
+        "nem"
+      ],
+      "rivals": [
+        "und",
+        "der",
+        "die",
+        "das",
+        "ist",
+        "nicht",
+        "für",
+        "von",
+        "den",
+        "dem",
+        "des",
+        "sie",
+        "wir",
+        "ich",
+        "ein",
+        "eine",
+        "einen",
+        "auf",
+        "auch",
+        "wird",
+        "werden",
+        "oder",
+        "sind",
+        "über",
+        "zur",
+        "zum",
+        "que",
+        "não",
+        "para",
+        "uma",
+        "dos",
+        "são",
+        "também",
+        "pelo",
+        "pela",
+        "los",
+        "las",
+        "del",
+        "por",
+        "una",
+        "está",
+        "les",
+        "est",
+        "une",
+        "pour",
+        "dans",
+        "avec",
+        "sur",
+        "ve",
+        "bir",
+        "bu",
+        "için",
+        "ile",
+        "olan",
+        "olarak",
+        "gibi",
+        "daha",
+        "çok",
+        "sonra",
+        "kadar"
+      ],
+      "min_hits": 3,
+      "ratio": 0.3333333333333333
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "hun",
+            "psm": 3,
+            "timeout_s": 300.0
+          },
+          "models": [
+            "hun"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "en:rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "en:rapid-det",
+            "en:rapid-cls",
+            "en:rapid-rec-latin"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "primary_with_floor",
+        "version": 1,
+        "params": {
+          "primary": "tesseract",
+          "checker": "rapidocr",
+          "floor": 0.5,
+          "min_words": 20,
+          "word_conf": 0.8,
+          "min_len": 4
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [
+    {
+      "name": "diacritic_word",
+      "version": 2,
+      "params": {
+        "source": "rapidocr",
+        "table": {
+          "ä": [
+            "a",
+            "á",
+            "ä"
+          ],
+          "Ä": [
+            "A",
+            "Á",
+            "Ä"
+          ],
+          "ß": [
+            "ß",
+            "B",
+            "ss",
+            "fs",
+            "8"
+          ]
+        },
+        "languages": [
+          "de"
+        ],
+        "never": "áéíóúőűÁÉÍÓÚŐŰ",
+        "context": [
+          "auch",
+          "auf",
+          "das",
+          "dem",
+          "den",
+          "der",
+          "des",
+          "die",
+          "ein",
+          "eine",
+          "einen",
+          "für",
+          "ich",
+          "ist",
+          "nicht",
+          "oder",
+          "sie",
+          "sind",
+          "über",
+          "und",
+          "von",
+          "werden",
+          "wir",
+          "wird",
+          "zum",
+          "zur"
+        ]
+      }
+    }
+  ],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    },
+    {
+      "name": "lines",
+      "version": 1
+    },
+    {
+      "name": "words",
+      "version": 1
+    },
+    {
+      "name": "links",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "hun",
+      "file": "hun.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 12350405,
+      "sha256": "08786ad5fe25d502d1cfcdf606ba215f320409a1630109582fa1a38d93b3e32d",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/9ddc24e750eec0994223a9edc3fcb434a2244f3b/hun.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    }
+  ],
+  "fonts": [],
+  "must_survive": [
+    {
+      "name": "double-acute",
+      "chars": "őűŐŰ",
+      "unit": "word",
+      "floor": 0.9
+    }
+  ],
+  "bench": {
+    "kit": "1.1",
+    "corpus": "public-v1@0f0737829b0e88393d4247d77d1c090a811ed295fa52a77ec9d441375a7ac245",
+    "engine_versions": {
+      "rapidocr": "3.10.0",
+      "tesseract": "5.5.3 (tesserocr 2.12.0)"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "metrics": {
+          "words": [
+            0.9623,
+            0.9581,
+            0.9093
+          ],
+          "trigrams": [
+            0.9965,
+            0.9933,
+            0.9758
+          ],
+          "digits": [
+            0.9255,
+            0.9481,
+            0.8951
+          ],
+          "must-double-acute": [
+            0.9969,
+            0.9776,
+            0.9624
+          ]
+        },
+        "worst_page": 0.5645,
+        "seconds_per_page": 4.3607,
+        "selection": {
+          "policy": "maximin-v2",
+          "margin": 0.0
+        }
+      }
+    }
+  },
+  "canary": {
+    "file": "canary-hu.png",
+    "bytes": 17879,
+    "sha256": "afa701e1ec0abfbd72a9ccee9fb42aa7c813ba0683e6220e761406997799954a",
+    "dpi": 300,
+    "must_find": [
+      "gyümölcs",
+      "kenyér",
+      "4521"
+    ]
+  }
+}

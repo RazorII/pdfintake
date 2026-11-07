@@ -1,0 +1,99 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Eau",
+      "revid": 241030901,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=241030901&action=raw",
+      "sha256": "cf70055350b1a409cbc5f21b29901eb07420616550a28314ebec5490609939f0",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Soleil",
+      "revid": 241025844,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=241025844&action=raw",
+      "sha256": "c5a50bc39f32329c9af41a37151b37187b9743e8cd46dd78dddd53f9edd7fbae",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Lune",
+      "revid": 240787057,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=240787057&action=raw",
+      "sha256": "2cfb87a1a5de8682bba448999ec86f7a13180a441fba9714cafdb6332c302cd0",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Photosynthèse",
+      "revid": 238282939,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=238282939&action=raw",
+      "sha256": "66f9872b3a6f2339038538c578bc6a9751180424d1fa5f7e7adc8d7bc19067aa",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Échecs",
+      "revid": 241017049,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=241017049&action=raw",
+      "sha256": "5e3422f3a748d556076b8560fad8dd4a5f2db51f30aacdddd47da7f485485cfd",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Pain",
+      "revid": 240824437,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=240824437&action=raw",
+      "sha256": "1f44f61b60bf807febf9cfd0973637003227616cceb8c22ae57b2d70935ad62f",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Volcan",
+      "revid": 240478850,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=240478850&action=raw",
+      "sha256": "cda4f7965c8354b58ed791e692a3110bdc3d9786f089ec689db7c89c39869f02",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "fr",
+      "title": "Rivière",
+      "revid": 236817793,
+      "url": "https://fr.wikipedia.org/w/index.php?oldid=236817793&action=raw",
+      "sha256": "6724ef7531b60a175dac70206a983ee99aad7ff810bb3bc3d050bf83b19b5bfc",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

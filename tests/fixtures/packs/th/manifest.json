@@ -1,0 +1,223 @@
+{
+  "schema": 1,
+  "id": "th",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "Thai",
+  "languages": [
+    {
+      "tag": "th",
+      "iso639_3": "tha",
+      "role": "primary"
+    },
+    {
+      "tag": "en",
+      "iso639_3": "eng",
+      "role": "secondary"
+    }
+  ],
+  "scripts": [
+    "Thai",
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Thai"
+    ],
+    "langid": {
+      "codes": [
+        "th"
+      ]
+    },
+    "probe": {
+      "use": {
+        "id": "probe",
+        "engine": "rapidocr",
+        "role": "probe",
+        "params": {
+          "rec": "rapid-rec-th"
+        },
+        "models": [
+          "en:rapid-det",
+          "rapid-rec-th"
+        ]
+      },
+      "min_chars": 20,
+      "min_conf": 0.8,
+      "min_line_chars": 2
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "tha+eng",
+            "psm": 3
+          },
+          "models": [
+            "tha",
+            "en:eng"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "rapid-rec-th"
+          },
+          "models": [
+            "en:rapid-det",
+            "en:rapid-cls",
+            "rapid-rec-th"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "single",
+        "version": 1,
+        "params": {
+          "reader": "tesseract"
+        }
+      },
+      "fallback": "none"
+    },
+    "darwin-arm64": {
+      "engines": [
+        {
+          "id": "vision",
+          "engine": "vision",
+          "role": "reader",
+          "params": {
+            "languages": [
+              "th-TH",
+              "en-US"
+            ],
+            "revision": 3,
+            "level": "accurate",
+            "language_correction": true
+          },
+          "models": []
+        },
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "tha+eng",
+            "psm": 3
+          },
+          "models": [
+            "tha",
+            "en:eng"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "rapid-rec-th"
+          },
+          "models": [
+            "en:rapid-det",
+            "en:rapid-cls",
+            "rapid-rec-th"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "corroborated_trigrams",
+        "version": 1,
+        "params": {
+          "script": "Thai",
+          "tie_order": [
+            "vision",
+            "tesseract"
+          ],
+          "corroborators": []
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc",
+    "thai_sara_am"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "tha",
+      "file": "tha.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 7614571,
+      "sha256": "ee8adab6dc69eb8df3d3c8307ae8295471b7bd7d86a06d9267aa8f479b064eac",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/ea00692e714e3b6bea926f939db8135063fc025b/tha.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    },
+    {
+      "key": "rapid-rec-th",
+      "file": "th_PP-OCRv5_rec_mobile.onnx",
+      "engine": "rapidocr",
+      "kind": "onnx_rec",
+      "bytes": 7915294,
+      "sha256": "de541dd83161c241ff426f7ecfd602a0ba77d686cf3ab9a6c255ea82fd08006e",
+      "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.8.0/onnx/PP-OCRv5/rec/th_PP-OCRv5_rec_mobile.onnx",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-paddleocr"
+    }
+  ],
+  "fonts": [
+    {
+      "key": "noto-sans-thai",
+      "file": "NotoSansThai-Regular.ttf",
+      "covers": [
+        "Thai"
+      ],
+      "bytes": 50000,
+      "sha256": "d84f9102978fe428ea08c1203e3721831f06bffa29e7fd599e7861c5ca5b1b07",
+      "source": "https://github.com/notofonts/thai/releases/download/fixture-v1/NotoSansThai-Regular.ttf",
+      "licence": "OFL-1.1"
+    }
+  ],
+  "canary": {
+    "file": "canary-th.png",
+    "bytes": 30000,
+    "sha256": "02fe7b82783e84be041185f27cd805651f83d972bbd1d095030168f122b6e0db",
+    "dpi": 300,
+    "must_find": [
+      "ตัวอย่าง",
+      "4521"
+    ]
+  },
+  "must_survive": [
+    {
+      "name": "tone-marks",
+      "chars": "่้๊๋ำ",
+      "unit": "trigram",
+      "floor": 0.75
+    }
+  ],
+  "bench": {
+    "kit": "1.0",
+    "corpus": "none",
+    "platforms": {}
+  }
+}

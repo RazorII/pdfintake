@@ -1,0 +1,90 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "en",
+      "title": "Water",
+      "revid": 1383422673,
+      "url": "https://en.wikipedia.org/w/index.php?oldid=1383422673&action=raw",
+      "sha256": "20cf1e604b4b77ed42ac92a5b78868157a8c60e98650a12a78f33b461643ee2e",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "en",
+      "title": "Sun",
+      "revid": 1383943614,
+      "url": "https://en.wikipedia.org/w/index.php?oldid=1383943614&action=raw",
+      "sha256": "f50242bfedecea9b05b440d2819eef8756fbf2b3de8ebfcbb13d783e1bf4f304",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "en",
+      "title": "Moon",
+      "revid": 1383347965,
+      "url": "https://en.wikipedia.org/w/index.php?oldid=1383347965&action=raw",
+      "sha256": "4d1538ef5c71caea2338ee3e0de88c67884e66dce0c0acc5eb490d73cfa75ca8",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "en",
+      "title": "Photosynthesis",
+      "revid": 1383248806,
+      "url": "https://en.wikipedia.org/w/index.php?oldid=1383248806&action=raw",
+      "sha256": "472dab419e9bafe1b4b35456f72cab412fb14f9c893e9d422ffe6459043125f9",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "en",
+      "title": "Chess",
+      "revid": 1383210429,
+      "url": "https://en.wikipedia.org/w/index.php?oldid=1383210429&action=raw",
+      "sha256": "d23c9e9107fc10e74b7f93c0d40c5d4e2c9a7ac27eb331f38903ad97ddbd7f6f",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "en",
+      "title": "Bread",
+      "revid": 1383452075,
+      "url": "https://en.wikipedia.org/w/index.php?oldid=1383452075&action=raw",
+      "sha256": "68c57ecced88a741339618c4284acbf0bb889d0303f9309937ea3de13e4d151c",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "en",
+      "title": "Volcano",
+      "revid": 1383463954,
+      "url": "https://en.wikipedia.org/w/index.php?oldid=1383463954&action=raw",
+      "sha256": "b219a18ea70bb871f07ade9643f0871f297dd1c1567465754ac19e9d51c15269",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

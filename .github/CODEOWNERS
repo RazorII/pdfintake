@@ -1,0 +1,11 @@
+# Every change needs the maintainer's review; branch protection on main requires it.
+# Language packs are data that core parses (fonts, models, canaries), so they're listed on their
+# own as well, together with the files that decide what CI and a release trust.
+*                                   @RazorII
+/packs/                             @RazorII
+/src/pdfintake/langpacks/           @RazorII
+/src/pdfintake/datawheel.py         @RazorII
+/tools/                             @RazorII
+/.github/                           @RazorII
+/scripts/                           @RazorII
+/pyproject.toml                     @RazorII

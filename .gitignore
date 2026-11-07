@@ -1,0 +1,33 @@
+# Virtual environments
+.venv/
+.venv-*/
+venv/
+env/
+
+# Python caches and build output
+__pycache__/
+*.py[cod]
+/build/
+/dist/
+*.egg-info/
+.eggs/
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Staging and scratch (pdfintake keeps its own staging in the user cache, never here)
+/staging/
+.staging/
+*.pdfintake-partial
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Kit working files: add-a-language.md says never to commit a draft manifest
+packs/*/manifest.draft.json

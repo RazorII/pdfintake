@@ -1,0 +1,425 @@
+{
+  "index_version": 1,
+  "core_min": "0.1.0",
+  "packs": [
+    {
+      "id": "en",
+      "version": "1.0.0",
+      "base": true,
+      "title": "English",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "en"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "en"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "8f91dae2c4e5335f2d5f650c31f4d927ed0b8d6eb8984d173ffe5fe305e44579",
+      "dist": {
+        "kind": "installed",
+        "distribution": "pdfintake-data-en",
+        "url": null,
+        "sha256": "25c9bfab9ab7162f41979c665f22601e71f3bee0bac81d3e5f37f3e696be1df6",
+        "bytes": 28390525
+      },
+      "installed_bytes": 28386706
+    },
+    {
+      "id": "de",
+      "version": "1.0.0",
+      "base": false,
+      "title": "German",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "de"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "de"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "ba5aaa4dcbbcdbaf8fe4635a110f29c61f44ea06e35962d5fce1f6f4d0e83eff",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-de",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_de-1.0.0-py3-none-any.whl",
+        "sha256": "39e3280a4c4b5ac2916d93497086faa3021ef46037aa5f07e32866ba34659128",
+        "bytes": 8659697
+      },
+      "installed_bytes": 8657769
+    },
+    {
+      "id": "es",
+      "version": "1.0.0",
+      "base": false,
+      "title": "Spanish",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "es"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "es"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "6a06b2ff7b723f472a5ebd17537f9fcb5835316ceab38192702a56c786042a7e",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-es",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_es-1.0.0-py3-none-any.whl",
+        "sha256": "a5445ea13537fe4fdbd5ddf6e83f74bc610ef1d63794b8dd0b3f1a35cf8e7cd0",
+        "bytes": 30372
+      },
+      "installed_bytes": 28952
+    },
+    {
+      "id": "fr",
+      "version": "1.0.0",
+      "base": false,
+      "title": "French",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "fr"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "fr"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "ba7c3bc52287e96786ab7247a2de628ec59917568ba0dd1536e1aa179ccb2ff7",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-fr",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_fr-1.0.0-py3-none-any.whl",
+        "sha256": "d75cc54bdb443d2fb9a92ba2188775f7ce3baa4eea388fa99cb352ed3665190f",
+        "bytes": 28422
+      },
+      "installed_bytes": 27003
+    },
+    {
+      "id": "hu",
+      "version": "1.0.0",
+      "base": false,
+      "title": "Hungarian",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "hu"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "hu"
+          ]
+        },
+        "function_words": {
+          "words": [
+            "és",
+            "hogy",
+            "az",
+            "egy",
+            "vagy",
+            "csak",
+            "már",
+            "még",
+            "kell",
+            "lesz",
+            "volt",
+            "ezt",
+            "azt",
+            "ez",
+            "pedig",
+            "illetve",
+            "valamint",
+            "szerint",
+            "alapján",
+            "között",
+            "részére",
+            "után",
+            "által",
+            "amely",
+            "amelyet",
+            "amelyek",
+            "továbbá",
+            "mint",
+            "meg",
+            "nem"
+          ],
+          "rivals": [
+            "und",
+            "der",
+            "die",
+            "das",
+            "ist",
+            "nicht",
+            "für",
+            "von",
+            "den",
+            "dem",
+            "des",
+            "sie",
+            "wir",
+            "ich",
+            "ein",
+            "eine",
+            "einen",
+            "auf",
+            "auch",
+            "wird",
+            "werden",
+            "oder",
+            "sind",
+            "über",
+            "zur",
+            "zum",
+            "que",
+            "não",
+            "para",
+            "uma",
+            "dos",
+            "são",
+            "também",
+            "pelo",
+            "pela",
+            "los",
+            "las",
+            "del",
+            "por",
+            "una",
+            "está",
+            "les",
+            "est",
+            "une",
+            "pour",
+            "dans",
+            "avec",
+            "sur",
+            "ve",
+            "bir",
+            "bu",
+            "için",
+            "ile",
+            "olan",
+            "olarak",
+            "gibi",
+            "daha",
+            "çok",
+            "sonra",
+            "kadar"
+          ],
+          "min_hits": 3,
+          "ratio": 0.3333333333333333
+        },
+        "probe": false
+      },
+      "manifest_sha256": "b924ec97ba8764754e51ea8a5ad7d99843013c5c4415bdaf1f26449172f69869",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-hu",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_hu-1.0.0-py3-none-any.whl",
+        "sha256": "3d2ac60c842b60bbd7e40bb76ab80caaef246bc30c5800a000827abf2bd02f96",
+        "bytes": 12386964
+      },
+      "installed_bytes": 12385032
+    },
+    {
+      "id": "it",
+      "version": "1.0.0",
+      "base": false,
+      "title": "Italian",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "it"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "it"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "840eeb718fa8f04bc41d051fa0c1645336d5a2386b75c67a7c45744e3c95bb8d",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-it",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_it-1.0.0-py3-none-any.whl",
+        "sha256": "ea189234c8ac6d7321b1af1cbe15732372362f8e68eb83425842d2a34c479217",
+        "bytes": 20768
+      },
+      "installed_bytes": 19348
+    },
+    {
+      "id": "pl",
+      "version": "1.0.0",
+      "base": false,
+      "title": "Polish",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "pl"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "pl"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "d4dd2a70209a8afd1e46b84249e6f0f02202427a33f5b90dbe594ea692a05ec2",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-pl",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_pl-1.0.0-py3-none-any.whl",
+        "sha256": "e6eb18b58c6d1531ff93e72437e843d6dc232789171286df81cc903c35cf5743",
+        "bytes": 12026457
+      },
+      "installed_bytes": 12024528
+    },
+    {
+      "id": "pt",
+      "version": "1.0.0",
+      "base": false,
+      "title": "Portuguese",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "pt"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "pt"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "fb36738b5c3dc5f189a15e873e690d8b9881f6b7ae166d0f584ce337c5ce8ba5",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-pt",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_pt-1.0.0-py3-none-any.whl",
+        "sha256": "6e1d6b6ba845f1bb2467b98a8f6ea29a2e4a6c04fd5e5e383dfe92474d77390f",
+        "bytes": 34737
+      },
+      "installed_bytes": 33314
+    },
+    {
+      "id": "th",
+      "version": "1.0.0",
+      "base": false,
+      "title": "Thai",
+      "scripts": [
+        "Thai",
+        "Latin"
+      ],
+      "langid_codes": [
+        "th"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Thai"
+        ],
+        "langid": {
+          "codes": [
+            "th"
+          ]
+        },
+        "probe": true
+      },
+      "manifest_sha256": "01f5ca45e7a11ede0cd64eccd387d629e4ff98264b19e2d5fac1bbf260afd95a",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-th",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_th-1.0.0-py3-none-any.whl",
+        "sha256": "65e12a9955d62485d9b767f9919f0ad2b3f52b8d0110dce6da6f80ed75cd99a3",
+        "bytes": 15605457
+      },
+      "installed_bytes": 15602505
+    },
+    {
+      "id": "vi",
+      "version": "1.0.0",
+      "base": false,
+      "title": "Vietnamese",
+      "scripts": [
+        "Latin"
+      ],
+      "langid_codes": [
+        "vi"
+      ],
+      "detect": {
+        "osd_scripts": [
+          "Latin"
+        ],
+        "langid": {
+          "codes": [
+            "vi"
+          ]
+        },
+        "probe": false
+      },
+      "manifest_sha256": "a2e492e0e4bf09c77d0444cbd6007f977e9ab162c2c116aa97385743332ecbbc",
+      "dist": {
+        "kind": "fetch",
+        "distribution": "pdfintake-lang-vi",
+        "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_vi-1.0.0-py3-none-any.whl",
+        "sha256": "cbf05dbecce0ebad8da922960374f7836e074df70948b2a8399fbcf0ebd416fe",
+        "bytes": 12472109
+      },
+      "installed_bytes": 12470176
+    }
+  ]
+}

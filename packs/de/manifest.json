@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "id": "de",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "German",
+  "languages": [
+    {
+      "tag": "de",
+      "iso639_3": "deu",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "de"
+      ]
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "deu",
+            "psm": 3,
+            "timeout_s": 300.0
+          },
+          "models": [
+            "deu"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "reader",
+          "params": {
+            "rec": "en:rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "en:rapid-rec-latin",
+            "en:rapid-cls",
+            "en:rapid-det"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "corroborated_trigrams",
+        "version": 1,
+        "params": {
+          "script": "Latin",
+          "tie_order": [
+            "tesseract",
+            "rapidocr"
+          ],
+          "corroborators": []
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "deu",
+      "file": "deu.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 8628461,
+      "sha256": "8407331d6aa0229dc927685c01a7938fc5a641d1a9524f74838cdac599f0d06e",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/deu.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    }
+  ],
+  "fonts": [],
+  "must_survive": [
+    {
+      "name": "umlauts-sharp-s",
+      "chars": "äöüßÄÖÜ",
+      "unit": "word",
+      "floor": 0.9
+    }
+  ],
+  "bench": {
+    "kit": "1.1",
+    "corpus": "public-v1@206dada958f67e019d61463f244b60888960efa879be1108627074f08d529bcc",
+    "engine_versions": {
+      "rapidocr": "3.10.0",
+      "tesseract": "5.5.3 (tesserocr 2.12.0)",
+      "vision": "rev3 (macOS 27.2)"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "metrics": {
+          "words": [
+            0.9846,
+            0.9818,
+            0.9476
+          ],
+          "trigrams": [
+            0.9996,
+            0.9993,
+            0.9734
+          ],
+          "digits": [
+            1.0,
+            1.0,
+            0.9899
+          ],
+          "must-umlauts-sharp-s": [
+            1.0,
+            1.0,
+            0.9935
+          ]
+        },
+        "worst_page": 0.7285,
+        "seconds_per_page": 4.3948,
+        "selection": {
+          "policy": "maximin-v2",
+          "margin": -0.0028
+        }
+      }
+    }
+  },
+  "canary": {
+    "file": "canary-de.png",
+    "bytes": 15321,
+    "sha256": "456f03cc49b736ef9581f7aeb2aa3d45edfa65548fe7cf8e4b6d2f7a431cb1c3",
+    "dpi": 300,
+    "must_find": [
+      "Größe",
+      "Wärme",
+      "4521"
+    ]
+  }
+}

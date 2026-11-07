@@ -1,0 +1,90 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "de",
+      "title": "Wasser",
+      "revid": 269323716,
+      "url": "https://de.wikipedia.org/w/index.php?oldid=269323716&action=raw",
+      "sha256": "d8aecad0fa99dbf002bb4976086570eebe145c515bcb636f39c4b5b3f0ef4f19",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "de",
+      "title": "Sonne",
+      "revid": 271786497,
+      "url": "https://de.wikipedia.org/w/index.php?oldid=271786497&action=raw",
+      "sha256": "54d3fa1212194845ce2d6a7c39c10826ed2e58a491bc02e2f7d293472f526eea",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "de",
+      "title": "Mond",
+      "revid": 269637884,
+      "url": "https://de.wikipedia.org/w/index.php?oldid=269637884&action=raw",
+      "sha256": "bff8ee63aa7bc2b2b3ed0b5151e15c94079a327f3de598d6d091d86c8b203485",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "de",
+      "title": "Photosynthese",
+      "revid": 271875810,
+      "url": "https://de.wikipedia.org/w/index.php?oldid=271875810&action=raw",
+      "sha256": "1d67e8a5201f1ecfadda6420ad73e2645ba2a7af5797e9b03ef948c52d6631b1",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "de",
+      "title": "Schach",
+      "revid": 271670150,
+      "url": "https://de.wikipedia.org/w/index.php?oldid=271670150&action=raw",
+      "sha256": "01bc15a6575b8f57eb91e8e0044d27f9bbcf80a957a41ae7d57a69e110a4c3e4",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "de",
+      "title": "Brot",
+      "revid": 271526502,
+      "url": "https://de.wikipedia.org/w/index.php?oldid=271526502&action=raw",
+      "sha256": "c0f22ce6aaa8d2e7a0920db81111693aec4b004d3557576c3b216ba7df0241c5",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "de",
+      "title": "Vulkan",
+      "revid": 271650587,
+      "url": "https://de.wikipedia.org/w/index.php?oldid=271650587&action=raw",
+      "sha256": "247abd94c44085a84959885efc019eba295f077b378c124b2a748b615ac3c495",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

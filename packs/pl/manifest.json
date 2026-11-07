@@ -1,0 +1,158 @@
+{
+  "schema": 1,
+  "id": "pl",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "Polish",
+  "languages": [
+    {
+      "tag": "pl",
+      "iso639_3": "pol",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "pl"
+      ]
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract2",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "pol",
+            "psm": 3,
+            "timeout_s": 300.0
+          },
+          "models": [
+            "pol"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "en:rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "en:rapid-rec-latin",
+            "en:rapid-cls",
+            "en:rapid-det"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "single",
+        "version": 1,
+        "params": {
+          "reader": "tesseract2"
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "pol",
+      "file": "pol.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 11978867,
+      "sha256": "e80cc4cefbdface06e9223f43f089556b9dcf104020fbc0a200f6863c57d4405",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/pol.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    }
+  ],
+  "fonts": [],
+  "must_survive": [
+    {
+      "name": "ogonek-kreska",
+      "chars": "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ",
+      "unit": "word",
+      "floor": 0.9
+    }
+  ],
+  "bench": {
+    "kit": "1.1",
+    "corpus": "public-v1@49da6e0cc96f4f10d8e42ad5b7358ea357410dbd0fba6fc95f1760e53b44e21a",
+    "engine_versions": {
+      "rapidocr": "3.10.0",
+      "tesseract": "5.5.3 (tesserocr 2.12.0)",
+      "vision": "rev3 (macOS 27.2)"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "metrics": {
+          "words": [
+            0.9751,
+            0.9696,
+            0.863
+          ],
+          "trigrams": [
+            0.9952,
+            0.9897,
+            0.9125
+          ],
+          "digits": [
+            0.9743,
+            0.9661,
+            0.9095
+          ],
+          "must-ogonek-kreska": [
+            1.0,
+            1.0,
+            0.9966
+          ]
+        },
+        "worst_page": 0.098,
+        "seconds_per_page": 4.7771,
+        "selection": {
+          "policy": "maximin-v2",
+          "margin": 0.0007
+        }
+      }
+    }
+  },
+  "canary": {
+    "file": "canary-pl.png",
+    "bytes": 31745,
+    "sha256": "b215edecd84945120db950890169c14d5019c3c5ab6239ccbe0fcf6929340d23",
+    "dpi": 300,
+    "must_find": [
+      "końcówki",
+      "prędkość",
+      "promieniowanie",
+      "4521"
+    ]
+  }
+}

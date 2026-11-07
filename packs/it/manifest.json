@@ -1,0 +1,176 @@
+{
+  "schema": 1,
+  "id": "it",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "Italian",
+  "languages": [
+    {
+      "tag": "it",
+      "iso639_3": "ita",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "it"
+      ]
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "reader",
+          "params": {
+            "rec": "en:rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "en:rapid-rec-latin",
+            "en:rapid-cls",
+            "en:rapid-det"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "single",
+        "version": 1,
+        "params": {
+          "reader": "rapidocr"
+        }
+      },
+      "fallback": "none"
+    },
+    "darwin-arm64": {
+      "engines": [
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "reader",
+          "params": {
+            "rec": "en:rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "en:rapid-rec-latin",
+            "en:rapid-cls",
+            "en:rapid-det"
+          ]
+        },
+        {
+          "id": "vision2",
+          "engine": "vision",
+          "role": "checker",
+          "params": {
+            "languages": [
+              "it-IT",
+              "en-US"
+            ],
+            "revision": 3,
+            "level": "accurate",
+            "language_correction": false,
+            "timeout_s": 120.0
+          },
+          "models": []
+        }
+      ],
+      "pick": {
+        "rule": "single",
+        "version": 1,
+        "params": {
+          "reader": "rapidocr"
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [],
+  "fonts": [],
+  "must_survive": [
+    {
+      "name": "accents",
+      "chars": "àèéìíòóùúÀÈÉÌÍÒÓÙÚ",
+      "unit": "word",
+      "floor": 0.9
+    }
+  ],
+  "bench": {
+    "kit": "1.1",
+    "corpus": "public-v1@dd83571921cb07c4262d3b1d41271b212be75e3cb335f62e95ff196e093d3b8c",
+    "engine_versions": {
+      "rapidocr": "3.10.0",
+      "tesseract": "5.5.3 (tesserocr 2.12.0)",
+      "vision": "rev3 (macOS 27.2)"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "metrics": {
+          "words": [
+            0.9885,
+            0.9814,
+            0.9401
+          ],
+          "trigrams": [
+            0.9995,
+            0.998,
+            0.965
+          ],
+          "digits": [
+            0.9951,
+            0.9951,
+            0.9789
+          ],
+          "must-accents": [
+            1.0,
+            1.0,
+            0.9811
+          ]
+        },
+        "worst_page": 0.6325,
+        "seconds_per_page": 2.251,
+        "selection": {
+          "policy": "maximin-v2",
+          "margin": -0.0001
+        }
+      }
+    }
+  },
+  "canary": {
+    "file": "canary-it.png",
+    "bytes": 15913,
+    "sha256": "aaf01458b365da7eeb48efa0e229990b9b8dd87a435ece0c7cc80b4ee3e77433",
+    "dpi": 300,
+    "must_find": [
+      "città",
+      "perché",
+      "così",
+      "4521"
+    ]
+  }
+}

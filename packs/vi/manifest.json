@@ -1,0 +1,230 @@
+{
+  "schema": 1,
+  "id": "vi",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "title": "Vietnamese",
+  "languages": [
+    {
+      "tag": "vi",
+      "iso639_3": "vie",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "vi"
+      ]
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "vie",
+            "psm": 3
+          },
+          "models": [
+            "vie"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "en:rapid-rec-latin"
+          },
+          "models": [
+            "en:rapid-det",
+            "en:rapid-cls",
+            "en:rapid-rec-latin"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "primary_with_floor",
+        "version": 1,
+        "params": {
+          "primary": "tesseract",
+          "checker": "rapidocr"
+        }
+      },
+      "fallback": "none"
+    },
+    "darwin-arm64": {
+      "engines": [
+        {
+          "id": "tesseract2",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "vie",
+            "psm": 3,
+            "timeout_s": 300.0
+          },
+          "models": [
+            "vie"
+          ]
+        },
+        {
+          "id": "vision",
+          "engine": "vision",
+          "role": "reader",
+          "params": {
+            "languages": [
+              "vi-VT",
+              "en-US"
+            ],
+            "revision": 3,
+            "level": "accurate",
+            "language_correction": true,
+            "timeout_s": 120.0
+          },
+          "models": []
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "en:rapid-rec-latin",
+            "use_cls": false,
+            "min_score": 0.5
+          },
+          "models": [
+            "en:rapid-rec-latin",
+            "en:rapid-cls",
+            "en:rapid-det"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "corroborated_trigrams",
+        "version": 1,
+        "params": {
+          "script": "Latin",
+          "tie_order": [
+            "tesseract2",
+            "vision"
+          ],
+          "corroborators": [
+            "rapidocr"
+          ]
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "vie",
+      "file": "vie.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 12435550,
+      "sha256": "b6b49293d95d0b6dbd8780174627e82c75be957b6f4ed9862155540d6b00bb45",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/vie.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    }
+  ],
+  "fonts": [],
+  "must_survive": [
+    {
+      "name": "letters",
+      "chars": "ăâđêôơưĂÂĐÊÔƠƯ",
+      "unit": "word",
+      "floor": 0.9
+    },
+    {
+      "name": "tones",
+      "chars": "àáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ",
+      "unit": "word",
+      "floor": 0.85
+    }
+  ],
+  "bench": {
+    "kit": "1.1",
+    "corpus": "public-v1@1d0680d44adb2b7f7d42281454f42d8e6c4bff511740fb965db37ad0de6d60e7",
+    "engine_versions": {
+      "rapidocr": "3.10.0",
+      "tesseract": "5.5.3 (tesserocr 2.12.0)",
+      "vision": "rev3 (macOS 27.2)"
+    },
+    "platforms": {
+      "darwin-arm64": {
+        "metrics": {
+          "words": [
+            0.9555,
+            0.9616,
+            0.902
+          ],
+          "trigrams": [
+            0.9727,
+            0.9789,
+            0.9294
+          ],
+          "digits": [
+            0.9921,
+            0.9921,
+            0.9713
+          ],
+          "must-letters": [
+            1.0,
+            1.0,
+            0.9321
+          ],
+          "must-tones": [
+            0.9834,
+            0.9866,
+            0.9
+          ]
+        },
+        "worst_page": 0.4815,
+        "seconds_per_page": 4.2921,
+        "selection": {
+          "policy": "maximin-v2",
+          "margin": 0.0017
+        }
+      }
+    }
+  },
+  "canary": {
+    "file": "canary-vi.png",
+    "bytes": 19026,
+    "sha256": "65020027ff3151c58903a2b01f1c58f13edc931f25e624fc3ba4fcdfb176a2dc",
+    "dpi": 300,
+    "must_find": [
+      "không",
+      "nguyên",
+      "thành",
+      "4521"
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Nước",
+      "revid": 75422415,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=75422415&action=raw",
+      "sha256": "b4921fed523d420ef2cecde52e616d2e3d5e2f23c4e2f4ba36b22140ba70d6d4",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Mặt Trời",
+      "revid": 75671654,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=75671654&action=raw",
+      "sha256": "f2e9acafe24e75e8f84e629278f1e01508906afa5fcd7691173525bd21e9e244",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Mặt Trăng",
+      "revid": 75647291,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=75647291&action=raw",
+      "sha256": "dd3183e3539270dfd313b2ce0b1f23effa6b2554ed629e87338fc59c1e234440",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Quang hợp",
+      "revid": 75051386,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=75051386&action=raw",
+      "sha256": "400aa567ffb88d855b7168334b3c301063cfaa0cddd521c2cb3a2c55175bae13",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Cờ vua",
+      "revid": 75694353,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=75694353&action=raw",
+      "sha256": "67eef7508139ffd10bee3cea5b7b5970fab4928244e2ffd6177044ba5f1596d2",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Bánh mì",
+      "revid": 74936685,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=74936685&action=raw",
+      "sha256": "9ab335d138e5a84c27453eab878751b9c3ac93814f3ffab77ddadbd0f8a3889f",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Núi lửa",
+      "revid": 75664555,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=75664555&action=raw",
+      "sha256": "7fb91350ae178b51dc817146e7d49fd76278f25130c9b75f1cdc659da62ddd62",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "vi",
+      "title": "Sông",
+      "revid": 75668503,
+      "url": "https://vi.wikipedia.org/w/index.php?oldid=75668503&action=raw",
+      "sha256": "29f7b6a2fe69eccb0c80fa05fb98ccab7376337112352cb1f4b1edfbe4fabbcc",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

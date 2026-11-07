@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "id": "en",
+  "version": "1.0.0",
+  "requires_core": ">=0.1.0",
+  "base": true,
+  "title": "English",
+  "languages": [
+    {
+      "tag": "en",
+      "iso639_3": "eng",
+      "role": "primary"
+    }
+  ],
+  "scripts": [
+    "Latin"
+  ],
+  "detect": {
+    "osd_scripts": [
+      "Latin"
+    ],
+    "langid": {
+      "codes": [
+        "en"
+      ]
+    }
+  },
+  "readers": {
+    "default": {
+      "engines": [
+        {
+          "id": "tesseract",
+          "engine": "tesseract",
+          "role": "reader",
+          "params": {
+            "lang": "eng",
+            "psm": 3
+          },
+          "models": [
+            "eng"
+          ]
+        },
+        {
+          "id": "rapidocr",
+          "engine": "rapidocr",
+          "role": "checker",
+          "params": {
+            "rec": "rapid-rec-latin"
+          },
+          "models": [
+            "rapid-det",
+            "rapid-cls",
+            "rapid-rec-latin"
+          ]
+        }
+      ],
+      "pick": {
+        "rule": "primary_with_floor",
+        "version": 1,
+        "params": {
+          "primary": "tesseract",
+          "checker": "rapidocr"
+        }
+      },
+      "fallback": "none"
+    }
+  },
+  "normalize": [
+    "nfc"
+  ],
+  "repairs": [],
+  "fills": [
+    {
+      "name": "numbers",
+      "version": 1
+    },
+    {
+      "name": "ids",
+      "version": 1
+    }
+  ],
+  "models": [
+    {
+      "key": "osd",
+      "file": "osd.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 10562727,
+      "sha256": "df4aad612d76976bd12b7ab4e04b632d5613e5bfcdbb98663abcaba29125af79",
+      "source": "https://github.com/tesseract-ocr/tessdata_best/raw/0123456789abcdef0123456789abcdef01234567/osd.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    },
+    {
+      "key": "eng",
+      "file": "eng.traineddata",
+      "engine": "tesseract",
+      "kind": "traineddata",
+      "bytes": 4113088,
+      "sha256": "8e5536d078902cba070f9c1f8c24894f64bc8018ed0af8b83b2d0aacb1132f0e",
+      "source": "https://github.com/tesseract-ocr/tessdata_fast/raw/0123456789abcdef0123456789abcdef01234567/eng.traineddata",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-tessdata"
+    },
+    {
+      "key": "rapid-det",
+      "file": "det_mobile.onnx",
+      "engine": "rapidocr",
+      "kind": "onnx_det",
+      "bytes": 4745517,
+      "sha256": "050fc607d9f895733908b5496fdd794c95f1d0cf7cefd92bb04cb6aeb75059c0",
+      "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.8.0/onnx/PP-OCRv5/det/det_mobile.onnx",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-paddleocr"
+    },
+    {
+      "key": "rapid-cls",
+      "file": "cls_mobile.onnx",
+      "engine": "rapidocr",
+      "kind": "onnx_cls",
+      "bytes": 585532,
+      "sha256": "1e1e334fb06310a0b86c461da46f159786759db2e3d5d48b980499fb3aa00785",
+      "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.8.0/onnx/PP-OCRv5/cls/cls_mobile.onnx",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-paddleocr"
+    },
+    {
+      "key": "rapid-rec-latin",
+      "file": "latin_rec_mobile.onnx",
+      "engine": "rapidocr",
+      "kind": "onnx_rec",
+      "bytes": 7904513,
+      "sha256": "898fa008383a99f4d48a0168a956931a9dbe12ccc56023aa0451341b5a1a516b",
+      "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.8.0/onnx/PP-OCRv5/rec/latin_rec_mobile.onnx",
+      "licence": "Apache-2.0",
+      "notice": "NOTICE-paddleocr"
+    }
+  ],
+  "fonts": [
+    {
+      "key": "noto-sans",
+      "file": "NotoSans-Regular.ttf",
+      "covers": [
+        "Latin",
+        "Greek",
+        "Cyrillic"
+      ],
+      "bytes": 600000,
+      "sha256": "d05f8fc4f8945c7e2a618b1654642a85490bf64fbc1ae15b5b5656ce212e1078",
+      "source": "https://github.com/notofonts/latin-greek-cyrillic/releases/download/fixture-v1/NotoSans-Regular.ttf",
+      "licence": "OFL-1.1"
+    }
+  ],
+  "canary": {
+    "file": "canary-en.png",
+    "bytes": 20000,
+    "sha256": "0e816acafa0654f9b002521ad128e264ba5c0ee77ae11debf456116ea9a08d52",
+    "dpi": 300,
+    "must_find": [
+      "example",
+      "4521"
+    ]
+  },
+  "must_survive": [],
+  "bench": {
+    "kit": "1.0",
+    "corpus": "none",
+    "platforms": {}
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "corpus_id": "public-v1",
+  "texts": [
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Acqua",
+      "revid": 152992062,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=152992062&action=raw",
+      "sha256": "27fa76b1e3134615a68dfad00fdd4d08c918ab3b6ebafe498dc5e0ef5a5e5e8c",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Sole",
+      "revid": 152894518,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=152894518&action=raw",
+      "sha256": "085a8eee9f7d583c1ba80d505e0d0c41d42a997be5d3227f6629eb9350f6a468",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Luna",
+      "revid": 153180897,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=153180897&action=raw",
+      "sha256": "1e200c2f78f39190d8903b14777daa032fe3de0ca89febbb18bc811109cbdb96",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Fotosintesi clorofilliana",
+      "revid": 152412937,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=152412937&action=raw",
+      "sha256": "5ccdd26bce32ce4eb92abc04f37b1fa3fc9b298426ab8a27da48d27f6b160045",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Scacchi",
+      "revid": 152656469,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=152656469&action=raw",
+      "sha256": "0f250f3ed065085ecb8bc3a7c81a843e6d67e4af3842e3faeb6fe952dbc0fdc5",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Pane",
+      "revid": 152571357,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=152571357&action=raw",
+      "sha256": "4f0443cbe0064780a860669aec67c83b74b3e52875032c049b5b453733fc4c56",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Vulcano",
+      "revid": 153042642,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=153042642&action=raw",
+      "sha256": "c366b5aca3f86e0a119e7debd93a7e9fda997b6c2ba845b7ee8a1a32793c9676",
+      "licence": "CC-BY-SA-4.0"
+    },
+    {
+      "source": "wikipedia",
+      "lang": "it",
+      "title": "Fiume",
+      "revid": 151257848,
+      "url": "https://it.wikipedia.org/w/index.php?oldid=151257848&action=raw",
+      "sha256": "9e88984df1da4a2cbd64ca53246ceeb33f0cda1aeb3237be04bc30accca76491",
+      "licence": "CC-BY-SA-4.0"
+    }
+  ],
+  "fonts": [
+    {
+      "family": "NotoSans",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSans/unhinted/ttf/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8",
+      "bytes": 431364,
+      "licence": "OFL-1.1"
+    },
+    {
+      "family": "NotoSerif",
+      "url": "https://github.com/notofonts/notofonts.github.io/raw/28b15b4b43b7bed62b5cf6e6b0b5ff5846270535/fonts/NotoSerif/unhinted/ttf/NotoSerif-Regular.ttf",
+      "sha256": "a15cfbbc1539d707115111d672d590a3d70d4f74b4c0a315956da20ae19a14e1",
+      "bytes": 482540,
+      "licence": "OFL-1.1"
+    }
+  ],
+  "pages": {
+    "prose": 4,
+    "form": 2,
+    "microprint": 1,
+    "mixed_script": 1
+  }
+}

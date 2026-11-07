@@ -1,0 +1,64 @@
+name: resolve
+
+# Weekly: can pdfintake's dependencies resolve on each supported platform for Python 3.11 to 3.15?
+# pyproject caps Python below 3.15 because onnxruntime has no cp315 wheel yet. This resolves the
+# runtime dependencies with that cap lifted, so a green 3.15 row says the cap can go. Wheels only
+# (--only-binary :all:): a dependency that resolves only to a source distribution would need a native
+# build the sandbox's uv tool install can't do (tesserocr needs Tesseract's headers), so it counts as
+# not resolving. A red row is
+# information, not a failure of the code, and the summary shows which dependency stops it.
+# The targets are uv's names for the supported rows of pdfintake.platforms.PLATFORMS
+# (tests/test_platform_table.py keeps the two equal).
+# Action versions are pinned to commit SHAs (tests/test_workflows.py).
+
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    name: ${{ matrix.target }}-py${{ matrix.python }}
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        target: [aarch64-apple-darwin, x86_64-pc-windows-msvc, x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: The runtime dependencies, without the Python cap or the English data wheel
+        run: |
+          python3 - <<'PY'
+          import re, tomllib
+          from pathlib import Path
+          deps = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["dependencies"]
+          # The data wheel is our own, pinned by URL; it has no Python or platform constraint.
+          keep = [d for d in deps if not re.match(r"^pdfintake-data-en\b", d)]
+          Path("requirements.in").write_text("\n".join(keep) + "\n", encoding="utf-8")
+          PY
+      - name: Resolve
+        env:
+          PY: ${{ matrix.python }}
+          TARGET: ${{ matrix.target }}
+          # pikepdf's macOS wheels need macOS 15, the floor of the darwin-arm64 row.
+          MACOSX_DEPLOYMENT_TARGET: "15.0"
+        run: |
+          rc=0
+          uv pip compile requirements.in --python-version "$PY" --python-platform "$TARGET" --only-binary :all: --no-header \
+            -o resolved.txt 2> resolve.err || rc=$?
+          {
+            echo "## $TARGET, Python $PY"
+            if [ "$rc" = 0 ]; then echo "resolves"; echo '```'; cat resolved.txt; echo '```'
+            else echo "does not resolve"; echo '```'; tail -n 40 resolve.err; echo '```'; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"

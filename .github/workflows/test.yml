@@ -1,0 +1,217 @@
+name: test
+
+# The test matrix (DESIGN §7.3). Every job builds the English data wheel from its pinned upstream
+# files, its canary drawn by kit/render.py (scripts/dev-install.sh), runs `pdfintake doctor --json
+# --canary`, then the suite. Actions are pinned to commit SHAs (tests/test_workflows.py). Every job
+# restores the data wheels keyed on the pack manifests; only the suite also restores the pack store,
+# because the network job must fetch the packs and the offline job warms its own store first.
+# tests/test_platform_table.py keeps the runners here equal to pdfintake.platforms.PLATFORMS.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  suite:
+    name: ${{ matrix.job }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { job: mac-floor, os: macos-15, python: "3.11", vision: "1", cache_name: pdfintake-cache, optional: false }
+          - { job: mac-new, os: macos-latest, python: "3.14", vision: "1", cache_name: pdfintake-cache, optional: false }
+          # Non-ASCII cache path: Tesseract must open its tessdata folder under it.
+          - { job: win-311, os: windows-latest, python: "3.11", vision: "0", cache_name: pdfintake-çache-ü, optional: false }
+          - { job: win-314, os: windows-latest, python: "3.14", vision: "0", cache_name: pdfintake-çache-ü, optional: false }
+          # The same base as the claude.ai sandbox.
+          - { job: linux-sandbox-base, os: ubuntu-24.04, python: "3.12", vision: "0", cache_name: pdfintake-cache, optional: false }
+          - { job: linux-new, os: ubuntu-latest, python: "3.14", vision: "0", cache_name: pdfintake-cache, optional: false }
+          - { job: linux-arm, os: ubuntu-24.04-arm, python: "3.12", vision: "0", cache_name: pdfintake-cache, optional: true }
+    env:
+      # Vision failures are failures, never skips, on the Macs.
+      PDFINTAKE_REQUIRE_VISION: ${{ matrix.vision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: Cache folder
+        shell: bash
+        env:
+          CACHE_NAME: ${{ matrix.cache_name }}
+        run: |
+          # On Windows the non-ASCII cache goes where a user's is (%LOCALAPPDATA%, on the system
+          # drive, which has 8.3 short names). The runner's D: drive has none, and Tesseract opens a
+          # non-ASCII folder only through its short name: there pdfintake refuses the folder by name.
+          base="$RUNNER_TEMP"
+          if [ "$RUNNER_OS" = Windows ]; then base="$LOCALAPPDATA"; fi
+          echo "PDFINTAKE_CACHE=$base/$CACHE_NAME" >> "$GITHUB_ENV"
+          echo "PDFINTAKE_TEST_MODELS=$RUNNER_TEMP/pdfintake-test-models" >> "$GITHUB_ENV"
+      - name: Restore the data wheels and the pack cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            dist
+            ${{ env.PDFINTAKE_CACHE }}/packs
+          key: data-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('packs/*/manifest.json') }}
+      # The real models and fonts the tests read through conftest's pinned_asset (decided 2026-11-05):
+      # without them the real-model tests, the Tesseract and RapidOCR engine contract among them, skip.
+      - name: Restore the pinned test models
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ env.PDFINTAKE_TEST_MODELS }}
+          key: test-models-${{ runner.os }}-${{ hashFiles('packs/*/manifest.json') }}
+      - name: Fetch the pinned test models (checks size and SHA-256; downloads only what is missing)
+        shell: bash
+        run: python tools/fetch_test_models.py
+      - name: Install (English built from its pinned sources, every pack wheel for the index check)
+        shell: bash
+        env:
+          PY: ${{ matrix.python }}
+        run: bash scripts/dev-install.sh --python "$PY" --packs all
+      - name: Doctor
+        shell: bash
+        run: pdfintake doctor --json --canary
+      - name: Tests
+        shell: bash
+        run: python -m pytest
+
+  sandbox:
+    # A root container like the claude.ai sandbox: pip is refused under PEP 668, so the only
+    # route in is uv, and a non-editable install proves the package data ships.
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:24.04
+      options: --user root
+    steps:
+      - name: System packages
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git python3 python3-pip python3-venv zstd
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Restore the data wheels
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: dist
+          key: dist-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('packs/*/manifest.json') }}
+      - name: PEP 668 refuses pip
+        shell: bash
+        run: |
+          if python3 -m pip install --dry-run certifi 2> pip.err; then
+            echo "pip installed into the system Python; the sandbox assumption no longer holds" >&2
+            exit 1
+          fi
+          grep -q externally-managed-environment pip.err
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: uv tool install with the English override
+        shell: bash
+        run: bash scripts/dev-install.sh --tool
+      - name: Doctor
+        shell: bash
+        run: pdfintake doctor --json
+      - name: Sandbox smoke test
+        shell: bash
+        env:
+          # Its skips are failures here (tests/e2e/test_sandbox_smoke.py).
+          PDFINTAKE_SANDBOX_SMOKE: "1"
+        run: |
+          uv venv "$RUNNER_TEMP/smoke"
+          uv pip install --python "$RUNNER_TEMP/smoke/bin/python" "pytest>=7"
+          "$RUNNER_TEMP/smoke/bin/python" -m pytest tests/e2e/test_sandbox_smoke.py
+
+  network:
+    # The real packs, fetched from the index, and the language end-to-end tests.
+    name: network-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-latest]
+    env:
+      PDFINTAKE_NETWORK_TESTS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: Cache folder
+        shell: bash
+        run: echo "PDFINTAKE_CACHE=$RUNNER_TEMP/pdfintake-network-cache" >> "$GITHUB_ENV"
+      - name: Restore the data wheels
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: dist
+          key: dist-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('packs/*/manifest.json') }}
+      - name: Install
+        shell: bash
+        run: bash scripts/dev-install.sh --python 3.12
+      - name: Doctor
+        shell: bash
+        run: pdfintake doctor --json --canary --check-network
+      - name: Pack fetch and language tests
+        shell: bash
+        run: python -m pytest tests/e2e/test_packs_network.py
+      - name: Tesseract with fetched packs
+        # These tests fetch th and hu through the index and the pack store; everywhere else they
+        # skip, so this is the one job that runs them (decided 2026-11-05).
+        shell: bash
+        run: python -m pytest -m network tests/test_tesseract.py
+
+  offline:
+    # Warm the cache once, then run the end-to-end tests with no network at all: proves that
+    # nothing downloads outside the pack store.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: Cache folder
+        run: echo "PDFINTAKE_CACHE=$RUNNER_TEMP/pdfintake-offline-cache" >> "$GITHUB_ENV"
+      - name: Restore the data wheels
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: dist
+          key: dist-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('packs/*/manifest.json') }}
+      - name: Install
+        run: bash scripts/dev-install.sh --python 3.12
+      - name: Warm the cache
+        run: |
+          pdfintake doctor --json --canary
+          python -m pytest tests/e2e/test_run_e2e.py
+      - name: End to end with no network
+        run: |
+          # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor; unshare needs one.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          unshare -rn python -m pytest tests/e2e/test_run_e2e.py

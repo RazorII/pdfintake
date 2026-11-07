@@ -389,9 +389,15 @@ state="${st%% *}"; id="${st##* }"
 if [ "$state" = missing ]; then
   gh release create "$tag" --repo "$slug" --draft --verify-tag --title "pdfintake $v" \
     --notes "pdfintake $v. Install: uv tool install git+https://github.com/$slug@$tag"
-  gh api "repos/$slug/releases?per_page=100" > "$work/releases.json"
-  st="$(helper state "$work/releases.json" "$tag" "$work/expect.tsv")"
-  state="${st%% *}"; id="${st##* }"
+  # GitHub's release listing can lag the create by a few seconds (the v0.1.0 draft was missing from
+  # the first look), so look again before giving up.
+  for _ in $(seq 1 10); do
+    gh api "repos/$slug/releases?per_page=100" > "$work/releases.json"
+    st="$(helper state "$work/releases.json" "$tag" "$work/expect.tsv")"
+    state="${st%% *}"; id="${st##* }"
+    [ "$state" = missing ] || break
+    sleep 3
+  done
   [ "$state" = draft-empty ] || { echo "the $tag draft didn't appear on GitHub (state: $state)" >&2; exit 1; }
 fi
 if { [ "$state" = draft-empty ] || [ "$state" = draft-partial ]; } && [ -n "$(cut -f2 "$work/expect.tsv" | grep -x "$tag" || true)" ]; then

@@ -1,0 +1,158 @@
+{
+  "packs": {
+    "de": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 8659697,
+          "distribution": "pdfintake-lang-de",
+          "kind": "fetch",
+          "sha256": "39e3280a4c4b5ac2916d93497086faa3021ef46037aa5f07e32866ba34659128",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_de-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "5670785b20a18a6c130b809e496099fd4543c738456a33fd101393b0d5aa2b36",
+        "installed_bytes": 8657769,
+        "manifest_sha256": "ba5aaa4dcbbcdbaf8fe4635a110f29c61f44ea06e35962d5fce1f6f4d0e83eff",
+        "release": "v0.1.0"
+      }
+    },
+    "en": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 28390525,
+          "distribution": "pdfintake-data-en",
+          "kind": "installed",
+          "sha256": "25c9bfab9ab7162f41979c665f22601e71f3bee0bac81d3e5f37f3e696be1df6",
+          "url": null
+        },
+        "index_entry_sha256": "d9be8aa31402486f440fe509cbdec0f4a87d6327e6eb86ba9688c19d965aa28a",
+        "installed_bytes": 28386706,
+        "manifest_sha256": "8f91dae2c4e5335f2d5f650c31f4d927ed0b8d6eb8984d173ffe5fe305e44579",
+        "release": "v0.1.0"
+      }
+    },
+    "es": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 30372,
+          "distribution": "pdfintake-lang-es",
+          "kind": "fetch",
+          "sha256": "a5445ea13537fe4fdbd5ddf6e83f74bc610ef1d63794b8dd0b3f1a35cf8e7cd0",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_es-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "019f392b30df5052b33749cf3404360f186bf76d967280557ce46e39d084145e",
+        "installed_bytes": 28952,
+        "manifest_sha256": "6a06b2ff7b723f472a5ebd17537f9fcb5835316ceab38192702a56c786042a7e",
+        "release": "v0.1.0"
+      }
+    },
+    "fr": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 28422,
+          "distribution": "pdfintake-lang-fr",
+          "kind": "fetch",
+          "sha256": "d75cc54bdb443d2fb9a92ba2188775f7ce3baa4eea388fa99cb352ed3665190f",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_fr-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "c560abac0f2daf4622717910f40d8ae1e82ee36f06261dad36dbfe270584450d",
+        "installed_bytes": 27003,
+        "manifest_sha256": "ba7c3bc52287e96786ab7247a2de628ec59917568ba0dd1536e1aa179ccb2ff7",
+        "release": "v0.1.0"
+      }
+    },
+    "hu": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 12386964,
+          "distribution": "pdfintake-lang-hu",
+          "kind": "fetch",
+          "sha256": "3d2ac60c842b60bbd7e40bb76ab80caaef246bc30c5800a000827abf2bd02f96",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_hu-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "c0ae39377d0f6dcb0163d0b338a477f06ed195caad668fbed437714a39b17ecb",
+        "installed_bytes": 12385032,
+        "manifest_sha256": "b924ec97ba8764754e51ea8a5ad7d99843013c5c4415bdaf1f26449172f69869",
+        "release": "v0.1.0"
+      }
+    },
+    "it": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 20768,
+          "distribution": "pdfintake-lang-it",
+          "kind": "fetch",
+          "sha256": "ea189234c8ac6d7321b1af1cbe15732372362f8e68eb83425842d2a34c479217",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_it-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "dbea085092be5f7c6f3e2811513e4579f2a36c4270c026a9f64662f239237475",
+        "installed_bytes": 19348,
+        "manifest_sha256": "840eeb718fa8f04bc41d051fa0c1645336d5a2386b75c67a7c45744e3c95bb8d",
+        "release": "v0.1.0"
+      }
+    },
+    "pl": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 12026457,
+          "distribution": "pdfintake-lang-pl",
+          "kind": "fetch",
+          "sha256": "e6eb18b58c6d1531ff93e72437e843d6dc232789171286df81cc903c35cf5743",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_pl-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "deeef1a8e31994bce425a216fa5f26fac4b41e59e6ef490b25126c82e3460424",
+        "installed_bytes": 12024528,
+        "manifest_sha256": "d4dd2a70209a8afd1e46b84249e6f0f02202427a33f5b90dbe594ea692a05ec2",
+        "release": "v0.1.0"
+      }
+    },
+    "pt": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 34737,
+          "distribution": "pdfintake-lang-pt",
+          "kind": "fetch",
+          "sha256": "6e1d6b6ba845f1bb2467b98a8f6ea29a2e4a6c04fd5e5e383dfe92474d77390f",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_pt-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "65dcb7a65da2b3136abdbb28cc9ac46b653a77e82eea40a7eb4ba788ac094de9",
+        "installed_bytes": 33314,
+        "manifest_sha256": "fb36738b5c3dc5f189a15e873e690d8b9881f6b7ae166d0f584ce337c5ce8ba5",
+        "release": "v0.1.0"
+      }
+    },
+    "th": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 15605457,
+          "distribution": "pdfintake-lang-th",
+          "kind": "fetch",
+          "sha256": "65e12a9955d62485d9b767f9919f0ad2b3f52b8d0110dce6da6f80ed75cd99a3",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_th-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "aa3f59a4e7bb90b86f0853277fc954ecaad0bf7f9e3cc6733b874ebe0a7128db",
+        "installed_bytes": 15602505,
+        "manifest_sha256": "01f5ca45e7a11ede0cd64eccd387d629e4ff98264b19e2d5fac1bbf260afd95a",
+        "release": "v0.1.0"
+      }
+    },
+    "vi": {
+      "1.0.0": {
+        "dist": {
+          "bytes": 12472109,
+          "distribution": "pdfintake-lang-vi",
+          "kind": "fetch",
+          "sha256": "cbf05dbecce0ebad8da922960374f7836e074df70948b2a8399fbcf0ebd416fe",
+          "url": "https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_lang_vi-1.0.0-py3-none-any.whl"
+        },
+        "index_entry_sha256": "4f18b676782c0d89c945f98880b2677960cab4ba7f9e335dc2d28f7ec159aba6",
+        "installed_bytes": 12470176,
+        "manifest_sha256": "a2e492e0e4bf09c77d0444cbd6007f977e9ab162c2c116aa97385743332ecbbc",
+        "release": "v0.1.0"
+      }
+    }
+  },
+  "record_version": 1,
+  "releases": [
+    "v0.1.0"
+  ]
+}

@@ -28,6 +28,10 @@ A release page that answers neither (no network, a 5xx) fails the run: the netwo
 **The language runs** go through the CLI in this process, on pages drawn here from made-up lines
 on neutral topics:
 
+* every pack reads a page of its own language (``PAGES``): pass 1 routes the page to it, at least
+  0.9 of the words (Thai: character trigrams) come back, and every character group the manifest
+  says must survive does, at that group's own floor. With a published release this proves each
+  pack end to end from the public assets, on every OS the network job runs on;
 * a shaped Thai page reaches at least 0.9 trigram recall, with its tone marks in the layer;
 * a Hungarian page keeps ő and ű in the layer;
 * a Latin page with a Thai block goes to the Thai pack through its probe once the pack is
@@ -96,6 +100,57 @@ ENGLISH = ["Rivers carry water from the hills down to the sea,",
            "and the sea gives it back to the sky as warm vapour.",
            "Clouds form when that vapour cools high above the land,",
            "and rain brings the water back to the hills once more."]
+
+# One page of made-up lines per pack, on the same neutral topic, each carrying every character
+# group the pack's manifest says must survive. Thai and Hungarian reuse the lines above.
+PAGES: dict[str, list[str]] = {
+    "de": ["Das Wasser fließt von den Bergen hinunter ins Meer,",
+           "und die Sonne wärmt es, bis es als Dampf aufsteigt.",
+           "Über dem Land kühlt der Dampf ab und bildet Wolken,",
+           "aus denen später Regen auf Wälder und Wiesen fällt.",
+           "So schließt sich der Kreislauf jedes Jahr aufs Neue."],
+    "es": ["El agua de los ríos baja de las montañas hasta el mar,",
+           "donde el sol la calienta y la convierte en vapor.",
+           "Más tarde, ese vapor se enfría y forma las nubes,",
+           "y la lluvia vuelve a caer sobre los campos y árboles.",
+           "En la orilla, una cigüeña observa el río en silencio.",
+           "Así comienza otra vez el ciclo cada año, sin pausa."],
+    "fr": ["Les rivières descendent des collines à la mer,",
+           "où le soleil les réchauffe et les change en vapeur.",
+           "Plus haut, cette vapeur se refroidit en nuages gris,",
+           "puis la pluie tombe sur les forêts et les châteaux.",
+           "Un garçon regarde la pluie tomber, le cœur tranquille.",
+           "Ce cycle se répète chaque année, été comme hiver."],
+    "hu": HUNGARIAN,
+    "it": ["Ogni mattina il sole scalda il mare vicino alla città,",
+           "così una parte del mare sale in cielo come vapore.",
+           "Più in alto il vapore si raffredda e forma le nuvole,",
+           "perché lassù fa freddo anche quando è estate.",
+           "Poi la pioggia cade sui boschi e il ciclo ricomincia.",
+           "Però nessuno vede quando il ciclo comincia davvero."],
+    "pl": ["Woda z rzek spływa z gór aż do morza,",
+           "gdzie słońce ogrzewa ją i zamienia w parę.",
+           "Wysoko nad ziemią para się ochładza i tworzy chmury,",
+           "a deszcz znów pada na lasy, łąki i pola.",
+           "Można to zobaczyć, gdy rano mgła unosi się nad rzeką.",
+           "Późną jesienią woda zamarza w małych stawach.",
+           "Ten obieg powtarza się każdego roku bez końca."],
+    "pt": ["A água dos rios desce das montanhas até o mar,",
+           "onde o sol a aquece e a transforma em vapor.",
+           "Lá no alto, o vapor esfria e forma as nuvens,",
+           "e a chuva volta a cair sobre as árvores e os campos.",
+           "O trânsito da água entre o céu e a terra nunca para.",
+           "Os cientistas reúnem informações sobre essas mudanças,",
+           "e o ciclo também se repete em cada estação do ano."],
+    "th": THAI,
+    "vi": ["Nước từ các con sông chảy xuống biển mỗi ngày,",
+           "mặt trời làm nóng nước và biến nó thành hơi.",
+           "Trên cao, hơi nước lạnh đi và tạo thành mây,",
+           "rồi mưa lại rơi xuống rừng, đồng ruộng và làng quê.",
+           "Vòng tuần hoàn này lặp lại quanh năm không ngừng."],
+}
+WORD_RECALL = 0.9       # Latin pages: share of the page's words read exactly (case-folded)
+TRIGRAM_RECALL = 0.9    # Thai pages: share of the page's character trigrams
 
 
 # --------------------------------------------------------------------------- the environment
@@ -453,6 +508,46 @@ def test_each_indexed_pack_is_fetched_from_the_index(packs: Packs, pack_id: str)
     assert result.ok, result.problems               # file's size and SHA-256, the canary passed
     for asset in (*pack.manifest.models, *pack.manifest.fonts):
         assert pack.asset_path(asset.key).is_file()  # asset_path checks size and SHA-256 again
+
+
+def test_every_pack_has_a_page():
+    assert sorted(PAGES) == sorted(REQUIRED), "every launch pack needs a page in PAGES"
+
+
+@pytest.mark.parametrize("pack_id", PACK_IDS)
+def test_each_pack_reads_a_page_in_its_language(packs: Packs, pack_id: str, tmp_path: Path):
+    """The pack as fetched (from the published release when there is one) reads a page of its own
+    language through the CLI: pass 1 routes the page to it, and its readers keep the words and every
+    character group its manifest says must survive, at that group's own floor."""
+    if pack_id not in packs.installed:
+        pytest.skip(packs.missing.get(pack_id, f"the {pack_id} pack isn't installed"))
+    if pack_id not in PAGES:
+        pytest.fail(f"{pack_id} is indexed but has no page in PAGES", pytrace=False)
+    from pdfintake.kit import score
+
+    pack = packs.installed[pack_id]
+    lines = PAGES[pack_id]
+    fonts = [pack.asset_path(f.key) for f in pack.manifest.fonts] or [_base().asset_path("noto-sans")]
+    page = shaped_page(tmp_path / f"{pack_id} lines.png", [(t, fonts[0]) for t in lines])
+    rec = run_one(page)
+    det = detection(rec)
+    truth = " ".join(lines)
+    text = pdf_text(Path(rec["output"]["path"]))
+    script = pack.manifest.scripts[0]               # the primary script, as the kit's bench takes it
+    metric = score.primary_metric(script)
+    if metric == "words":
+        recall, floor = score.word_recall(truth, text, script), WORD_RECALL
+    else:
+        recall, floor = score.trigram_recall(truth, text, script), TRIGRAM_RECALL
+    survived = {ms.name: score.must_survive_recall(truth, text, ms, script) for ms in pack.manifest.must_survive}
+    print(f"\n{pack_id} ({packs.source[pack_id]}): routed to {det['pack']} ({det['composition']}), "
+          f"{metric} recall {recall:.3f}, must survive {survived}")
+    assert det["pack"] == pack_id, rec["language"]
+    assert recall >= floor, text
+    for ms in pack.manifest.must_survive:
+        got = survived[ms.name]
+        assert got is not None, f"{ms.name}: none of its characters were read\n{text}"
+        assert got >= ms.floor, f"{ms.name}: {got:.3f} < {ms.floor}\n{text}"
 
 
 def test_a_shaped_thai_page_is_read_by_the_thai_pack(packs: Packs, tmp_path: Path):

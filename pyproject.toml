@@ -27,8 +27,7 @@ classifiers = [
   "Topic :: Text Processing",
 ]
 # pdfintake-data-en is the English data wheel (models, font, canary), pinned by URL and sha256.
-# The URL and hash below are PLACEHOLDERS until the data wheel is published:
-# scripts/dev-install.sh overrides this pin, and the release steps replace it.
+# The v0.1.0 release hosts it; scripts/dev-install.sh overrides this pin for a local checkout.
 dependencies = [
   "certifi",
   "fonttools>=4.68,<5",
@@ -36,7 +35,7 @@ dependencies = [
   "numpy>=2.0",
   "onnxruntime>=1.31",
   "opencv-python-headless",
-  "pdfintake-data-en @ https://placeholder.invalid/pdfintake-data-en/pdfintake_data_en-1.0.0-py3-none-any.whl#sha256=0000000000000000000000000000000000000000000000000000000000000000",
+  "pdfintake-data-en @ https://github.com/RazorII/pdfintake/releases/download/v0.1.0/pdfintake_data_en-1.0.0-py3-none-any.whl#sha256=25c9bfab9ab7162f41979c665f22601e71f3bee0bac81d3e5f37f3e696be1df6",
   "pikepdf>=10.17,<11",
   "pillow>=13,<14",
   "pillow-heif>=1.8",

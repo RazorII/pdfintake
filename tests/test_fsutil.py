@@ -1454,3 +1454,149 @@ def test_utf8_stdio_lets_a_cp1252_stream_print_thai_and_emoji(monkeypatch: pytes
     # the stream ends lines as the platform's text streams do (\r\n on Windows); utf8_stdio changes only the encoding
     assert raw.getvalue().decode("utf-8") == "ตัวอย่าง 📎" + end
     assert sys.stderr.encoding.lower().replace("-", "") == "utf8"
+
+
+# --------------------------------------------------------------------------- busy files on Windows
+
+class _Clock:
+    """``time`` as fsutil sees it: ``sleep`` moves a made-up clock instead of waiting."""
+
+    def __init__(self) -> None:
+        self.now = 0.0
+        self.sleeps: list[float] = []
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.sleeps.append(seconds)
+        self.now += seconds
+
+
+class _Win:
+    """``sys`` as fsutil sees it, with ``platform`` win32."""
+
+    platform = "win32"
+
+    def __getattr__(self, name: str):
+        return getattr(sys, name)
+
+
+def _busy_error(winerror: int = 32) -> PermissionError:
+    exc = PermissionError(13, "The process cannot access the file because it is being used by another process")
+    exc.winerror = winerror                 # what Windows' OSError carries; set by hand off Windows
+    return exc
+
+
+def test_windows_busy_is_only_errors_5_and_32_on_windows(monkeypatch):
+    assert not fsutil.windows_busy(_busy_error(32))              # not on Windows here
+    monkeypatch.setattr(fsutil, "sys", _Win())
+    assert fsutil.windows_busy(_busy_error(5)) and fsutil.windows_busy(_busy_error(32))
+    assert not fsutil.windows_busy(_busy_error(3)) and not fsutil.windows_busy(PermissionError(13, "denied"))
+    assert not fsutil.windows_busy(FileExistsError(17, "exists"))
+
+
+def test_retry_busy_waits_out_a_short_busy_spell_on_windows(monkeypatch):
+    clock = _Clock()
+    monkeypatch.setattr(fsutil, "sys", _Win())
+    monkeypatch.setattr(fsutil, "time", clock)
+    calls = []
+
+    def op(x):
+        calls.append(x)
+        if len(calls) < 4:
+            raise _busy_error(5)
+        return "done"
+
+    assert fsutil.retry_busy(op, 1) == "done"
+    assert len(calls) == 4 and len(clock.sleeps) == 3 and clock.now < fsutil.REPLACE_PATIENCE_S
+
+
+def test_retry_busy_raises_at_once_off_windows_and_for_other_errors(monkeypatch):
+    clock = _Clock()
+    monkeypatch.setattr(fsutil, "time", clock)
+
+    def op():
+        raise _busy_error(32)
+
+    with pytest.raises(PermissionError):
+        fsutil.retry_busy(op)                                     # macOS / Linux: no retry
+    monkeypatch.setattr(fsutil, "sys", _Win())
+
+    def other():
+        raise _busy_error(3)
+
+    with pytest.raises(PermissionError):
+        fsutil.retry_busy(other)                                  # Windows, but not a busy file
+    assert clock.sleeps == []
+
+
+def test_on_windows_overwrite_onto_an_output_held_open_is_output_in_use(tmp_path: Path, monkeypatch):
+    """A PDF viewer keeps the file open: the replace is tried for the patience, then the run says why
+    (exit 2) instead of an unexplained PermissionError; dest and the folder are as they were."""
+    built = tmp_path / "built.pdf"
+    built.write_bytes(b"%PDF-1.7 new")
+    dest = tmp_path / "out" / "scan (searchable).pdf"
+    dest.parent.mkdir()
+    dest.write_bytes(b"%PDF-1.7 old, open in a viewer")
+    clock = _Clock()
+    monkeypatch.setattr(fsutil, "time", clock)
+    monkeypatch.setattr(fsutil, "windows_busy", lambda exc: isinstance(exc, PermissionError)
+                        and getattr(exc, "winerror", None) in (5, 32))
+    real = os.replace
+
+    def replace(src, dst, *a, **k):
+        if Path(dst) == dest:
+            raise _busy_error(32)
+        return real(src, dst, *a, **k)
+
+    monkeypatch.setattr(fsutil.os, "replace", replace)
+    with pytest.raises(UsageError) as info:
+        fsutil.atomic_write(built, dest, overwrite=True)
+    assert info.value.code == "output_in_use" and info.value.exit_code == EXIT_USAGE
+    assert str(dest) in info.value.message
+    assert fsutil.REPLACE_PATIENCE_S <= clock.now < fsutil.REPLACE_PATIENCE_S + 1
+    assert dest.read_bytes() == b"%PDF-1.7 old, open in a viewer"
+    assert sorted(p.name for p in dest.parent.iterdir()) == [dest.name]
+
+
+def test_on_windows_overwrite_waits_for_a_reader_that_lets_go(tmp_path: Path, monkeypatch):
+    built = tmp_path / "built.pdf"
+    built.write_bytes(b"%PDF-1.7 new")
+    dest = tmp_path / "out.pdf"
+    dest.write_bytes(b"%PDF-1.7 old")
+    clock = _Clock()
+    monkeypatch.setattr(fsutil, "time", clock)
+    monkeypatch.setattr(fsutil, "windows_busy", lambda exc: getattr(exc, "winerror", None) in (5, 32))
+    real, refused = os.replace, []
+
+    def replace(src, dst, *a, **k):
+        if Path(dst) == dest and len(refused) < 3:               # an indexer reads it for a moment
+            refused.append(1)
+            raise _busy_error(5)
+        return real(src, dst, *a, **k)
+
+    monkeypatch.setattr(fsutil.os, "replace", replace)
+    fsutil.atomic_write(built, dest, overwrite=True)
+    assert dest.read_bytes() == b"%PDF-1.7 new" and len(refused) == 3
+
+
+def test_on_windows_a_compare_and_swap_onto_an_open_output_is_output_in_use(tmp_path: Path, monkeypatch):
+    """apply replacing its own output: dest can't be set aside while a viewer has it open."""
+    dest = tmp_path / "out.pdf"
+    dest.write_bytes(b"%PDF-1.7 old")
+    clock = _Clock()
+    monkeypatch.setattr(fsutil, "time", clock)
+    monkeypatch.setattr(fsutil, "windows_busy", lambda exc: getattr(exc, "winerror", None) in (5, 32))
+    monkeypatch.setattr(fsutil, "_rename_excl", lambda src, dst: errno.ENOTSUP)   # Windows has no renamex_np
+    real = os.rename
+
+    def rename(src, dst, *a, **k):
+        if Path(src) == dest:
+            raise _busy_error(32)
+        return real(src, dst, *a, **k)
+
+    monkeypatch.setattr(fsutil.os, "rename", rename)
+    with pytest.raises(UsageError) as info:
+        fsutil._set_aside(dest, fsutil._aside_path(dest))
+    assert info.value.code == "output_in_use" and dest.read_bytes() == b"%PDF-1.7 old"

@@ -1067,7 +1067,7 @@ def test_copy_never_overwrites_is_a_usage_error():
     err = record.usage_error("copy_never_overwrites")
     assert isinstance(err, UsageError) and err.exit_code == 2 and err.code == "copy_never_overwrites"
     assert "--overwrite" in err.message
-    assert record.USAGE_CODES == {"copy_never_overwrites", "passwords_file_unsafe",
+    assert record.USAGE_CODES == {"copy_never_overwrites", "passwords_file_unsafe", "output_in_use",
                                   "input_missing", "input_not_file", "unsupported_input"}
     with pytest.raises(ValueError):
         record.usage_error("made_up")

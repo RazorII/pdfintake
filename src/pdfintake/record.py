@@ -193,6 +193,10 @@ USAGE_MESSAGES: Mapping[str, str] = {
     # Per-file input codes (decided 2026-11-06): one input's own record says exit 2, and the rest of
     # the batch carries on. A FIFO, a device such as /dev/stdin or a folder is never opened, because
     # reading one would make the run wait, and a run never waits (DESIGN §12).
+    # Windows only: --overwrite (or apply replacing its own output) onto a file another program keeps
+    # open, still open after fsutil.retry_busy's patience. fsutil raises it with the file's name.
+    "output_in_use": ("The output is open in another program, so pdfintake couldn't replace it. Close it there "
+                      "and run again; nothing was written."),
     "input_missing": "This input doesn't exist or can't be read, so nothing was done with it.",
     "input_not_file": ("This input isn't a regular file (it's a folder, a pipe or a device), so pdfintake didn't "
                        "open it."),
@@ -640,7 +644,9 @@ def save(rec: Record, *, forbid: Sequence[str | bytes] = ()) -> Path:
             fh.write("\n")
             fh.flush()
             os.fsync(fh.fileno())
-        os.replace(tmp, dest)
+        from . import fsutil
+
+        fsutil.replace_retrying(tmp, dest)               # a reader on Windows holds it only briefly
     except BaseException:
         try:
             os.unlink(tmp)

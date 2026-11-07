@@ -112,7 +112,7 @@ XFA forms are still refused, because their pages are drawn only when they're vie
 |---|---|
 | 0 | Done (read the warnings and offers anyway), including a file skipped because no saved password opened it |
 | 1 | A file failed, including a failed check or an input pdfintake can't place without losing data |
-| 2 | Bad arguments, an output that exists or would hit an input, mixed PDFs and images, an input that is missing or isn't a regular file (`input_not_file`: a folder, a pipe or a device), `--overwrite` for a searchable copy (`copy_never_overwrites`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`); for `apply`, an unknown record or a flag that doesn't fit the offer |
+| 2 | Bad arguments, an output that exists or would hit an input, mixed PDFs and images, an input that is missing or isn't a regular file (`input_not_file`: a folder, a pipe or a device), `--overwrite` for a searchable copy (`copy_never_overwrites`), an output open in another program on Windows (`output_in_use`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`); for `apply`, an unknown record or a flag that doesn't fit the offer |
 | 3 | Setup: the English data missing or broken, an unsupported platform, a broken model |
 | 4 | Refused, nothing written: for `run`, an XFA form, metadata that can't be read, a damaged file, or one the two detectors disagree about; for `apply --choice smaller`, the same checks on the original again, or a file kept as a searchable copy, which never gets a smaller version (`no_smaller_for_a_copy`) |
 | 5 | Stale: the input changed during the run, or since the record |

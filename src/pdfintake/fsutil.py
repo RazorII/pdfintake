@@ -43,6 +43,8 @@ _NO_RENAME_EXCL = frozenset({errno.ENOTSUP, errno.EOPNOTSUPP, errno.EINVAL, errn
 _NO_HARD_LINKS = frozenset({errno.EPERM, errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS, errno.EXDEV,
                             errno.EMLINK})
 _RENAMEX: list[object] = []  # renamex_np, looked up once (or None where there is none)
+_WIN_BUSY = frozenset({5, 32})      # ERROR_ACCESS_DENIED, ERROR_SHARING_VIOLATION: a handle has the file
+REPLACE_PATIENCE_S = 2.0            # how long a busy rename is tried again on Windows (retry_busy)
 
 
 # --------------------------------------------------------------------------- the one writer
@@ -306,14 +308,69 @@ def _rename_excl(src: Path, dst: Path) -> int | None:
     return ctypes.get_errno() or errno.EIO
 
 
+# --------------------------------------------------------------------------- busy files on Windows
+
+def windows_busy(exc: BaseException) -> bool:
+    """True for the PermissionError Windows raises while another handle has a file open:
+    ERROR_ACCESS_DENIED (5) or ERROR_SHARING_VIOLATION (32). Never true elsewhere."""
+    return (sys.platform == "win32" and isinstance(exc, PermissionError)
+            and getattr(exc, "winerror", None) in _WIN_BUSY)
+
+
+def retry_busy(op: Any, *args: Any, patience: float = REPLACE_PATIENCE_S) -> Any:
+    """``op(*args)`` (a rename or replace), tried again on Windows for up to ``patience`` seconds
+    while a file is busy.
+
+    POSIX's rename replaces a file whoever has it open. Windows refuses while the file being
+    replaced, or the one being moved, is open elsewhere (``windows_busy``), and the refusal ends
+    once that handle closes: CI saw WinError 5 with eight builds replacing one file at once
+    (2026-11-07), and a virus scanner or an indexer reading a new file holds it the same way. Every
+    other error, and every error elsewhere, is raised at once; a busy file still busy at the
+    deadline raises its PermissionError.
+    """
+    deadline = time.monotonic() + patience
+    pause = 0.005
+    while True:
+        try:
+            return op(*args)
+        except PermissionError as exc:
+            if not windows_busy(exc) or time.monotonic() >= deadline:
+                raise
+        time.sleep(pause)
+        pause = min(pause * 2, 0.1)
+
+
+def replace_retrying(src: Path | str, dst: Path | str) -> None:
+    """``os.replace(src, dst)`` through ``retry_busy``: every cache and record writer's replace."""
+    retry_busy(os.replace, src, dst)
+
+
+def _output_in_use(dest: Path) -> UsageError:
+    return UsageError("output_in_use",
+                      f"{dest} is open in another program, so pdfintake couldn't replace it. Close it there "
+                      "and run again; nothing was written.", path=str(dest))
+
+
+def _replace_output(partial: Path, dest: Path) -> None:
+    """Replace the output ``dest`` with ``partial`` (``--overwrite``). On Windows a viewer that keeps
+    ``dest`` open blocks the replace for as long as it has it open; after ``retry_busy``'s patience
+    that is UsageError ``output_in_use``, not an unexplained PermissionError."""
+    try:
+        replace_retrying(partial, dest)
+    except PermissionError as exc:
+        if windows_busy(exc):
+            raise _output_in_use(dest) from None
+        raise
+
+
 def _publish(partial: Path, dest: Path, *, overwrite: bool) -> None:
     """Rename the finished partial file to ``dest`` (see ``atomic_write`` for the order of ways)."""
     if overwrite:
-        os.replace(partial, dest)
+        _replace_output(partial, dest)
         return
     if sys.platform == "win32":
         try:
-            os.rename(partial, dest)                     # Windows' rename never replaces a file
+            retry_busy(os.rename, partial, dest)         # Windows' rename never replaces a file
         except FileExistsError:
             raise _appeared(dest) from None
         return
@@ -341,7 +398,7 @@ def _publish(partial: Path, dest: Path, *, overwrite: bool) -> None:
     # rename. What can still slip in is a file made in the microseconds between the two calls.
     if os.path.lexists(dest):
         raise _appeared(dest)
-    os.replace(partial, dest)
+    replace_retrying(partial, dest)
 
 
 def _aside_path(dest: Path) -> Path:
@@ -395,9 +452,13 @@ def _set_aside(dest: Path, aside: Path) -> None:
     if os.path.lexists(aside):
         raise _write_conflict(dest)
     try:
-        os.rename(dest, aside)                           # Windows refuses an existing target
+        retry_busy(os.rename, dest, aside)               # Windows refuses an existing target
     except FileExistsError:
         raise _write_conflict(dest) from None
+    except PermissionError as exc:
+        if windows_busy(exc):                            # a viewer has dest open: it can't be moved
+            raise _output_in_use(dest) from None
+        raise
 
 
 def _hash_locked(path: Path) -> tuple[int | None, str | None]:

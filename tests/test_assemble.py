@@ -19,6 +19,7 @@ import pytest
 from PIL import Image, ImageChops, ImageOps, ImageStat
 
 from fixtures import build
+from pdfintake import fsutil
 from pdfintake.errors import LosslessUnavailable, UsageError
 from pdfintake.intake import assemble as A
 from pdfintake.intake.assemble import AssembledPage, assemble, orientation_matrix, page_size
@@ -714,11 +715,11 @@ def test_on_windows_a_busy_replace_is_tried_again(tmp_path: Path, monkeypatch, w
     src = _one_image(tmp_path)
     dest = tmp_path / "out.pdf"
     clock = _Clock()
-    monkeypatch.setattr(A, "sys", _Platform("win32"))
-    monkeypatch.setattr(A, "time", clock)
+    monkeypatch.setattr(fsutil, "sys", _Platform("win32"))
+    monkeypatch.setattr(fsutil, "time", clock)
     refused = _refuse_replace(monkeypatch, dest, winerror, times=3)
     assemble([src], dest)
-    assert len(refused) == 3 and len(clock.sleeps) == 3 and clock.now < A._REPLACE_PATIENCE_S
+    assert len(refused) == 3 and len(clock.sleeps) == 3 and clock.now < fsutil.REPLACE_PATIENCE_S
     assert dest.read_bytes().startswith(b"%PDF-")
     assert sorted(p.name for p in tmp_path.iterdir()) == ["a.png", "out.pdf"]
 
@@ -728,12 +729,12 @@ def test_on_windows_a_replace_still_busy_after_the_patience_raises_and_leaves_no
     src = _one_image(tmp_path)
     dest = tmp_path / "out.pdf"
     clock = _Clock()
-    monkeypatch.setattr(A, "sys", _Platform("win32"))
-    monkeypatch.setattr(A, "time", clock)
+    monkeypatch.setattr(fsutil, "sys", _Platform("win32"))
+    monkeypatch.setattr(fsutil, "time", clock)
     _refuse_replace(monkeypatch, dest, 5, times=10**6)
     with pytest.raises(PermissionError):
         assemble([src], dest)
-    assert A._REPLACE_PATIENCE_S <= clock.now < A._REPLACE_PATIENCE_S + 1
+    assert fsutil.REPLACE_PATIENCE_S <= clock.now < fsutil.REPLACE_PATIENCE_S + 1
     assert sorted(p.name for p in tmp_path.iterdir()) == ["a.png"]
 
 
@@ -743,8 +744,8 @@ def test_any_other_refused_replace_is_raised_at_once(tmp_path: Path, monkeypatch
     src = _one_image(tmp_path)
     dest = tmp_path / "out.pdf"
     clock = _Clock()
-    monkeypatch.setattr(A, "sys", _Platform(platform))
-    monkeypatch.setattr(A, "time", clock)
+    monkeypatch.setattr(fsutil, "sys", _Platform(platform))
+    monkeypatch.setattr(fsutil, "time", clock)
     refused = _refuse_replace(monkeypatch, dest, winerror, times=1)
     with pytest.raises(PermissionError):
         assemble([src], dest)

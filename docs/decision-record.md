@@ -137,7 +137,7 @@ pdfintake never asks for a password. It tries the passwords the user saved once 
 |---|---|
 | 0 | done; read the warnings and the offers. A file skipped because no saved password opened it is exit 0 too (`skipped_no_password`) |
 | 1 | failed (the record says why) |
-| 2 | usage: bad arguments, an input that is missing (`input_missing`), isn't a regular file (`input_not_file`: a folder, a pipe or a device) or isn't a PDF or an image pdfintake reads (`unsupported_input`), each in that input's own record; an unknown record id, a flag that doesn't fit the offer, `--overwrite` with a searchable copy (`copy_never_overwrites`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`) |
+| 2 | usage: bad arguments, an input that is missing (`input_missing`), isn't a regular file (`input_not_file`: a folder, a pipe or a device) or isn't a PDF or an image pdfintake reads (`unsupported_input`), each in that input's own record; an unknown record id, a flag that doesn't fit the offer, `--overwrite` with a searchable copy (`copy_never_overwrites`), an output that is open in another program on Windows (`output_in_use`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`) |
 | 3 | setup: base pack missing or broken, unsupported platform, broken model install |
 | 4 | refused; nothing written. For `run`: a hard refusal code (below); signed, certified, PDF/A, encrypted, counterparty and evidence files get a searchable copy instead, exit 0. For `apply --choice smaller`: the original, read again, has a hard code, or it is kept as a searchable copy, which never gets a smaller version (`no_smaller_for_a_copy`) |
 | 5 | stale: an input, output or candidate changed since the record; run again |
@@ -198,6 +198,7 @@ A note is information, reported in one summary line:
 These usage errors (exit 2) have codes of their own, with core's wording in `USAGE_MESSAGES` in `record.py`. In a record the code is in the failed step's `detail.code`, with the message beside it:
 
 - `copy_never_overwrites`: `--overwrite` was given for a searchable copy. A copy never replaces an existing file.
+- `output_in_use` (Windows): the output to be replaced (`--overwrite`, or `apply` replacing its own output) is open in another program, and still was after pdfintake retried for two seconds. The message names the file. Nothing was written; close the file there and run again.
 - `passwords_file_unsafe`: pdfintake won't use the saved passwords file as it is. The message names the file and the one reason it was turned down, never a password. The reasons `passwords.py` reports:
   - it doesn't exist (a `--passwords-file` that isn't there; a missing default file just means there are no saved passwords);
   - it isn't a regular file;

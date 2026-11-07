@@ -29,14 +29,13 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import os
-import sys
 import tempfile
-import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 
+from .. import fsutil
 from ..errors import LosslessUnavailable, UsageError
 from .images import (METADATA_FORMAT_LIMIT, DecodedImage, ImagePayload, Route, _gray_payload, _icc_components,
                      _png_chunks, _png_orientation, _upright, decode_exact, encode_jpeg, flate_payload, jpeg_payload,
@@ -46,8 +45,6 @@ from .sniff import MAX_IMAGE_PIXELS, sniff
 
 LONG_SIDE_PT = 842.0
 XOBJECT_NAME = "/Im0"
-_WIN_BUSY = frozenset({5, 32})      # ERROR_ACCESS_DENIED, ERROR_SHARING_VIOLATION: a handle has the file
-_REPLACE_PATIENCE_S = 2.0           # how long a busy replace is tried again on Windows (_replace)
 
 # Where each stored-image corner lands, per EXIF orientation: the page matrix for a page of
 # width W and height H is (a*W, b*H, c*W, d*H, e*W, f*H) with these unit coefficients.
@@ -231,29 +228,8 @@ def _same_file(a: Path, b: Path) -> bool:
 
 
 def _replace(partial: Path, dest: Path) -> None:
-    """``os.replace(partial, dest)``, tried again on Windows for a short while when a file is busy.
-
-    POSIX's rename replaces ``dest`` whoever has it open. Windows refuses while the file being
-    replaced, or the one being moved, is open elsewhere: ERROR_ACCESS_DENIED (5) or
-    ERROR_SHARING_VIOLATION (32), both gone once that handle closes. CI saw WinError 5 with eight
-    builds replacing one ``dest`` at once (2026-11-07); a virus scanner or an indexer reading the
-    new file can hold it too. So there the replace is tried again for up to ``_REPLACE_PATIENCE_S``
-    seconds before the error is raised; every other error, and every error elsewhere, is raised
-    at once.
-    """
-    deadline = time.monotonic() + _REPLACE_PATIENCE_S
-    pause = 0.005
-    while True:
-        try:
-            os.replace(partial, dest)
-            return
-        except PermissionError as exc:
-            if (sys.platform != "win32" or getattr(exc, "winerror", None) not in _WIN_BUSY
-                    or time.monotonic() >= deadline):
-                raise
-        time.sleep(pause)
-        pause = min(pause * 2, 0.1)
-
+    """``os.replace(partial, dest)``, tried again on Windows while a file is busy (``fsutil.retry_busy``)."""
+    fsutil.replace_retrying(partial, dest)
 
 def _check_pixels(path: Path, width: int, height: int) -> None:
     if width * height > MAX_IMAGE_PIXELS:

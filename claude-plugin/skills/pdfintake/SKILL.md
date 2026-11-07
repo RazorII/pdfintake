@@ -87,7 +87,7 @@ Tell the user once, in a few words, that a password typed in the chat stays in t
 |---|---|---|
 | 0 | Done, including a file skipped because no saved password opened it (`skipped_no_password`) | Add it to the summary (section 5). |
 | 1 | A file failed, including a failed check or an input pdfintake can't place without losing data | List it in the summary with the record's error. Nothing was written for it. |
-| 2 | Bad arguments, an output that already exists or would hit an input, mixed PDFs and images, an input that is missing, isn't a regular file or isn't a PDF or an image (`input_missing`, `input_not_file`, `unsupported_input`, each in that input's own record), `--overwrite` for a searchable copy (`copy_never_overwrites`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`); for `apply`, an unknown record id or a flag that doesn't fit | Fix the command and run again, or list it in the summary (below). |
+| 2 | Bad arguments, an output that already exists or would hit an input, mixed PDFs and images, an input that is missing, isn't a regular file or isn't a PDF or an image (`input_missing`, `input_not_file`, `unsupported_input`, each in that input's own record), `--overwrite` for a searchable copy (`copy_never_overwrites`), an output open in another program on Windows (`output_in_use`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`); for `apply`, an unknown record id or a flag that doesn't fit | Fix the command and run again, or list it in the summary (below). |
 | 3 | Setup: a missing or broken base pack, an unsupported platform, a broken model | Explain in plain words, as in section 1. |
 | 4 | Refused: nothing written, the original untouched. From `run`, a hard refusal code (section 6). From `apply --choice smaller`, the original failed its checks again, or it's kept as a searchable copy, which never gets a smaller version (`no_smaller_for_a_copy`) | List it in the summary with `refusal.message` (for `apply`, the top-level `refusal`; no record is written). |
 | 5 | Stale: the file changed during the run, or since the record | Run that file again. |
@@ -99,6 +99,7 @@ If pdfintake is stopped by SIGTERM or SIGHUP (a closed terminal, a stopped servi
 A few exit 2 cases:
 - An output that already exists: say which files already had a searchable version and were left as they were. Add `--overwrite` only if the user said to replace them.
 - `copy_never_overwrites`: a `(searchable copy).pdf` is already in the way, and `--overwrite` can't help. Say so; the user can move it or pick another folder.
+- `output_in_use` (Windows): the file `--overwrite` would replace is open in another program, such as a PDF viewer, so nothing was written for it. List it in the summary with that reason: once it's closed there, the same command works.
 - `input_not_file`, `input_missing`, `unsupported_input`: one input was a folder, a pipe or a device, was missing, or wasn't a PDF or an image. Only that input's record has exit 2; the rest of the batch ran. List it in the summary. When the user named a folder, pass the PDFs or images inside it, never the folder itself.
 - `passwords_file_unsafe`: the message names the passwords file and what's wrong with it. If it says other users can read or change the file, and that file is one you already know (the saved list at its default path in section 3, or the file you passed with `--passwords-file`), make it private with `chmod 600`, typing that known path yourself rather than copying it from the message. Say you did, and run again. Otherwise, or for any other path, report the message.
 
@@ -226,6 +227,7 @@ One closing line for all of them, except `copy_unlocked`, `signature_not_carried
 The code is in the failed step of that file's record, or in `error.code` when the whole command stopped.
 
 - `copy_never_overwrites`: a searchable copy never replaces an existing file, so `--overwrite` can't be used for it.
+- `output_in_use`: on Windows, the output to be replaced is open in another program and stayed open for the two seconds pdfintake waited. The message names the file.
 - `passwords_file_unsafe`: the passwords file is missing, isn't a regular file, can't be read, isn't UTF-8 text, belongs to another user, can be read or changed by other users, lies outside the user's folder (Windows only), is larger than 128 KB, holds more than 100 passwords, or (for `passwords add`) already holds 100. The message names the file and the reason, never a password.
 - `input_missing`: an input doesn't exist or can't be read.
 - `input_not_file`: an input isn't a regular file: a folder, a pipe or a device such as `/dev/stdin`. pdfintake never opens one, because reading it would make the run wait.

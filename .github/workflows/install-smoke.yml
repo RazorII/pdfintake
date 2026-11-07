@@ -1,0 +1,85 @@
+name: install-smoke
+
+# Installs a published release the way the plugin's skill tells a user to (`uv tool install
+# git+https://github.com/RazorII/pdfintake@<tag>`, with whatever Python the runner has), on Linux,
+# Windows and macOS, and runs tests/e2e/test_sandbox_smoke.py against that install from a separate
+# environment holding only pytest: the install reports the tag's version, its package data is all
+# there, doctor says ready, an English page is read, and a first run on a page in another language
+# fetches that pack from the release's own assets and reads it. Nothing of this checkout is
+# installed; it supplies only the test file.
+#
+# Safety: started by hand only (workflow_dispatch), with a read-only token and no stored secrets.
+# The tag and pack id reach the shell only through environment variables, and only after they match
+# vX.Y.Z and the pack id pattern. Action versions are pinned to commit SHAs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to install (for example v0.1.0)"
+        required: true
+        type: string
+      pack:
+        description: "Pack the first run fetches from the release (de or hu)"
+        required: false
+        default: "de"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: install-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-15]
+    env:
+      PYTHONUTF8: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PDFINTAKE_SANDBOX_SMOKE: "1"
+      TAG: ${{ inputs.tag }}
+      PACK: ${{ inputs.pack }}
+    steps:
+      - name: Check the inputs
+        shell: bash
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::not a release tag: $TAG"; exit 1; }
+          [[ "$PACK" =~ ^[a-z]{2,3}(-[a-z0-9]{2,8})?$ ]] || { echo "::error::not a pack id: $PACK"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: "0.13.5"   # the uv pack-publish.yml installs by digest
+      - name: Install the release from its tag
+        shell: bash
+        run: |
+          uv tool install "git+https://github.com/RazorII/pdfintake@$TAG"
+          tools="$(uv tool dir)"
+          case "$RUNNER_OS" in
+            Windows) py="$tools\\pdfintake\\Scripts\\python.exe" ;;
+            *) py="$tools/pdfintake/bin/python" ;;
+          esac
+          uv tool dir --bin >> "$GITHUB_PATH"
+          {
+            echo "PDFINTAKE_SMOKE_PYTHON=$py"
+            echo "PDFINTAKE_SMOKE_VERSION=${TAG#v}"
+            echo "PDFINTAKE_SMOKE_FETCH=$PACK"
+          } >> "$GITHUB_ENV"
+      - name: Doctor
+        shell: bash
+        run: pdfintake doctor --json
+      - name: Smoke test against the install
+        shell: bash
+        run: |
+          uv venv "$RUNNER_TEMP/smoke"
+          case "$RUNNER_OS" in
+            Windows) tpy="$RUNNER_TEMP/smoke/Scripts/python.exe" ;;
+            *) tpy="$RUNNER_TEMP/smoke/bin/python" ;;
+          esac
+          uv pip install --python "$tpy" "pytest>=7"
+          "$tpy" -m pytest -rs tests/e2e/test_sandbox_smoke.py

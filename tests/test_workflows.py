@@ -7,8 +7,9 @@ safety properties: triggers, tokens, secrets, checkout credentials).
 * No run script holds a ``${{ ... }}`` expression: a value reaches the shell only through an
   environment variable, so nothing a workflow is handed (an input, a pack id, a ref) is ever pasted
   into a script.
-* ``bench-platforms.yml`` starts by hand only (workflow_dispatch) with a read-only token, and no job
-  asks for more.
+* ``bench-platforms.yml`` and ``install-smoke.yml`` start by hand only (workflow_dispatch) with a
+  read-only token, and no job asks for more. install-smoke runs the sandbox smoke test with its skips
+  as failures, on every OS of the network job.
 * The steps that need a particular setting have it: the sandbox smoke test runs with
   ``PDFINTAKE_SANDBOX_SMOKE=1``, pack-bench's summary prints ``kit verify``'s warnings, and
   pack-publish rebuilds the wheels the way ``scripts/dev-install.sh`` does (the canary drawn first).
@@ -48,7 +49,7 @@ def _uses_lines() -> list[tuple[str, int, str, str]]:
 
 def test_there_are_workflows():
     assert {p.name for p in FILES} >= {"test.yml", "pack-bench.yml", "pack-publish.yml", "resolve.yml",
-                                      "bench-platforms.yml"}
+                                      "bench-platforms.yml", "install-smoke.yml"}
 
 
 def test_every_action_is_pinned_to_a_commit_with_its_tag_in_a_comment():
@@ -104,8 +105,9 @@ def test_no_run_script_holds_an_expression():
                     "through env: instead of an expression inside the script")
 
 
-def test_bench_platforms_starts_by_hand_with_a_read_only_token():
-    wf = _wf(WORKFLOWS / "bench-platforms.yml")
+@pytest.mark.parametrize("name", ["bench-platforms.yml", "install-smoke.yml"])
+def test_hand_started_workflows_have_a_read_only_token(name: str):
+    wf = _wf(WORKFLOWS / name)
     assert list(wf["on"]) == ["workflow_dispatch"]
     assert wf["permissions"] == {"contents": "read"}
     for job_id, job in wf["jobs"].items():
@@ -122,6 +124,18 @@ def test_the_sandbox_smoke_test_must_run():
     (step,) = [s for s in _wf(WORKFLOWS / "test.yml")["jobs"]["sandbox"]["steps"]
                if "test_sandbox_smoke.py" in str(s.get("run", ""))]
     assert step.get("env", {}).get("PDFINTAKE_SANDBOX_SMOKE") == "1"
+
+
+def test_install_smoke_installs_the_tag_and_must_run_the_smoke_test_everywhere():
+    wf = _wf(WORKFLOWS / "install-smoke.yml")
+    (job,) = wf["jobs"].values()
+    assert job["env"].get("PDFINTAKE_SANDBOX_SMOKE") == "1"
+    network = _wf(WORKFLOWS / "test.yml")["jobs"]["network"]["strategy"]["matrix"]["os"]
+    assert sorted(job["strategy"]["matrix"]["os"]) == sorted(network)
+    runs = "\n".join(str(s.get("run", "")) for s in job["steps"])
+    assert 'uv tool install "git+https://github.com/RazorII/pdfintake@$TAG"' in runs
+    assert "tests/e2e/test_sandbox_smoke.py" in runs
+    assert "dev-install.sh" not in runs, "install-smoke must install the release, not this checkout"
 
 
 def test_pack_bench_summary_prints_the_warnings():

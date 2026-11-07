@@ -14,6 +14,16 @@ other CI job, and a developer's checkout). In a job that must run it, those skip
 the CI ``sandbox`` job itself (``GITHUB_ACTIONS=true`` with ``GITHUB_JOB=sandbox``), so the guarantee
 doesn't hang on the workflow setting a variable, and anywhere ``PDFINTAKE_SANDBOX_SMOKE=1`` is set.
 Every text is made up.
+
+The ``install-smoke`` workflow runs the same file against a published release installed from its tag
+on Linux, Windows and macOS, and sets three more variables:
+
+* ``PDFINTAKE_SMOKE_PYTHON``: the install's own interpreter. A Windows ``pdfintake.exe`` is a
+  launcher with no shebang line to read it from.
+* ``PDFINTAKE_SMOKE_VERSION``: the version the install must report (the tag without its ``v``).
+* ``PDFINTAKE_SMOKE_FETCH``: a pack id. A page in that language is drawn and run with the default
+  ``--fetch auto``, so the pack comes from the release's own assets, as a user's first run gets it.
+  Unset (the CI ``sandbox`` job, which installs an unreleased checkout), that test skips.
 """
 
 from __future__ import annotations
@@ -37,7 +47,17 @@ PACKAGE_DATA = (("pdfintake.langpacks", "index.json"), ("pdfintake.langpacks", "
                 ("pdfintake.ocr", "calibration.json"))
 LINES = ["Volcanoes form where hot rock rises from deep",
          "below the ground and cools into new mountains."]
+# A page per pack the fetch test can draw with the base pack's Latin font (word, must appear in the layer).
+FETCH_PAGES: dict[str, tuple[list[str], tuple[str, ...]]] = {
+    "de": (["Das Wasser fließt von den Bergen hinunter ins Meer,",
+            "und die Sonne wärmt es, bis es als Dampf aufsteigt.",
+            "Über dem Land kühlt der Dampf ab und bildet Wolken."], ("fließt", "wärmt", "kühlt")),
+    "hu": (["A víz körforgása a felhőkből és a folyókból áll,",
+            "és a hűvös erdő is őrzi a nedvességet egész nyáron.",
+            "A tavaszi eső után a föld puha lesz, és a fű nő."], ("felhőkből", "hűvös", "őrzi")),
+}
 TIMEOUT_S = 900
+PYTHON_ENV, VERSION_ENV, FETCH_ENV = "PDFINTAKE_SMOKE_PYTHON", "PDFINTAKE_SMOKE_VERSION", "PDFINTAKE_SMOKE_FETCH"
 
 
 def _not_here(why: str) -> None:
@@ -48,7 +68,13 @@ def _not_here(why: str) -> None:
 
 
 def _interpreter(cli: str) -> str:
-    """The Python the ``pdfintake`` script runs on, from its shebang line (a uv tool or venv script)."""
+    """The Python the ``pdfintake`` script runs on: ``PDFINTAKE_SMOKE_PYTHON`` when set, otherwise
+    the script's shebang line (a uv tool or venv script)."""
+    named = os.environ.get(PYTHON_ENV)
+    if named:
+        if not Path(named).is_file():
+            _not_here(f"{PYTHON_ENV} names {named}, which isn't a file")
+        return named
     try:
         with open(cli, "rb") as fh:
             first = fh.readline(4096)
@@ -113,6 +139,13 @@ def install(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     return {"cli": cli, "python": py, "cache": cache, **facts}
 
 
+def test_the_install_is_the_version_asked_for(install: dict[str, Any]):
+    want = os.environ.get(VERSION_ENV)
+    if not want:
+        pytest.skip(f"{VERSION_ENV} isn't set (only the install-smoke workflow names a version)")
+    assert install["version"] == want
+
+
 def test_the_install_is_not_the_checkout(install: dict[str, Any]):
     package = Path(install["package"]).resolve()
     checkout = Path(__file__).resolve().parents[2]
@@ -149,31 +182,24 @@ def test_doctor_says_ready(install: dict[str, Any]):
     assert data["index"]["ok"] is True
 
 
-def test_one_run_writes_a_searchable_pdf(install: dict[str, Any], tmp_path: Path):
-    folder = tmp_path / "in"
-    folder.mkdir()
-    image = folder / "volcano note.png"
-    # The page is drawn by the install's own Pillow, with the base pack's font: this environment has
-    # neither, and only pytest.
+def _draw(install: dict[str, Any], image: Path, lines: list[str]) -> None:
+    """A page of ``lines`` drawn by the install's own Pillow, with the base pack's font: this
+    environment has neither, and only pytest."""
     _python(install["python"], (
         "import json, sys\n"
         "from PIL import Image, ImageDraw, ImageFont\n"
         "from pdfintake.langpacks import store\n"
         "font = ImageFont.truetype(str(store.base().asset_path('noto-sans')), 44)\n"
-        "img = Image.new('L', (1500, 500), 255)\n"
+        "img = Image.new('L', (1500, 120 + 110 * (len(sys.argv) - 2)), 255)\n"
         "draw = ImageDraw.Draw(img)\n"
         "for k, line in enumerate(sys.argv[2:]):\n"
         "    draw.text((80, 100 + 110 * k), line, font=font, fill=0)\n"
         "img.save(sys.argv[1], dpi=(200, 200))\n"
-        "print(json.dumps({'ok': True}))\n"), install["cache"], str(image), *LINES)
-    before = image.read_bytes()
-    code, data = _cli(install["cli"], install["cache"], "run", str(image))
-    assert code == 0 and data["exit"] == 0, data
-    (rec,) = data["records"]
-    out = Path(rec["output"]["path"])
-    assert out == folder / "volcano note (searchable).pdf" and out.is_file()
-    assert image.read_bytes() == before
-    text = _python(install["python"], (
+        "print(json.dumps({'ok': True}))\n"), install["cache"], str(image), *lines)
+
+
+def _layer_text(install: dict[str, Any], pdf: Path) -> str:
+    return _python(install["python"], (
         "import json, sys\n"
         "import pypdfium2 as pdfium\n"
         "doc = pdfium.PdfDocument(sys.argv[1])\n"
@@ -181,6 +207,43 @@ def test_one_run_writes_a_searchable_pdf(install: dict[str, Any], tmp_path: Path
         "tp = page.get_textpage()\n"
         "text = tp.get_text_bounded()\n"
         "tp.close(); page.close(); doc.close()\n"
-        "print(json.dumps({'text': text}))\n"), install["cache"], str(out))["text"].lower()
+        "print(json.dumps({'text': text}))\n"), install["cache"], str(pdf))["text"]
+
+
+def test_one_run_writes_a_searchable_pdf(install: dict[str, Any], tmp_path: Path):
+    folder = tmp_path / "in"
+    folder.mkdir()
+    image = folder / "volcano note.png"
+    _draw(install, image, LINES)
+    before = image.read_bytes()
+    code, data = _cli(install["cli"], install["cache"], "run", str(image))
+    assert code == 0 and data["exit"] == 0, data
+    (rec,) = data["records"]
+    out = Path(rec["output"]["path"])
+    assert out == folder / "volcano note (searchable).pdf" and out.is_file()
+    assert image.read_bytes() == before
+    text = _layer_text(install, out).lower()
     for word in ("volcanoes", "mountains"):
+        assert word in text, text
+
+
+def test_a_first_run_fetches_the_pack_it_needs_and_reads_with_it(install: dict[str, Any], tmp_path: Path):
+    pack_id = os.environ.get(FETCH_ENV)
+    if not pack_id:
+        pytest.skip(f"{FETCH_ENV} isn't set (only the install-smoke workflow fetches from a published release)")
+    if pack_id not in FETCH_PAGES:
+        pytest.fail(f"{FETCH_ENV}={pack_id!r}: this file has pages for {', '.join(sorted(FETCH_PAGES))}",
+                    pytrace=False)
+    lines, words = FETCH_PAGES[pack_id]
+    image = tmp_path / f"{pack_id} note.png"
+    _draw(install, image, lines)
+    code, data = _cli(install["cli"], install["cache"], "run", str(image))
+    assert code == 0 and data["exit"] == 0, data
+    (rec,) = data["records"]
+    pages = rec["language"]["detection"]["pages"]
+    assert [p["pack"] for p in pages] == [pack_id], rec["language"]
+    code, doctor = _cli(install["cli"], install["cache"], "doctor")
+    assert code == 0, doctor.get("problems")
+    text = _layer_text(install, Path(rec["output"]["path"]))
+    for word in words:
         assert word in text, text

@@ -9,13 +9,17 @@ of them missing from the index fails, except a pack in ``PENDING`` (not built ye
 with that reason.
 
 **Where the packs come from.** The index pins each pack's wheel to an asset of a GitHub release
-(``.../releases/download/<tag>/<wheel>``). Whether that release is published is asked of the
-release page itself (``.../releases/tag/<tag>``), never inferred from one asset:
+(``.../releases/download/<tag>/<wheel>``). Whether that release is published is asked of GitHub's
+releases API (``api.github.com/repos/<owner>/<repo>/releases/tags/<tag>``), never inferred from one
+asset, and never from the release page (``.../releases/tag/<tag>``): that page answers for a bare tag
+too, so on the tag's own commit, pushed before the release exists, it called the release published
+and every asset missing. ``PDFINTAKE_TEST_GITHUB_TOKEN`` (the network job's read-only token) lifts the
+API's anonymous rate limit; without it the call goes unauthenticated:
 
-* **Published release** (the page answers): every asset of it must answer too, so a missing upload,
+* **Published release** (the API answers, not a draft): every asset of it must answer too, so a missing upload,
   a renamed wheel or a wrong index URL fails here. Those packs are fetched exactly as a user's run
   fetches them: the real index entry, the real store.
-* **Unpublished release** (the page answers 404): those packs come from a CI-built local index
+* **Unpublished release** (the API answers 404: no release, a bare tag or a draft): those packs come from a CI-built local index
   instead. Each wheel is built here from its pinned upstream files (``datawheel``, with the canary
   rendered as ``kit wheel`` renders it), must hash to the index's pin, and is served over HTTPS
   from loopback with a throwaway certificate. Only the download address changes (those entries'
@@ -23,7 +27,7 @@ release page itself (``.../releases/tag/<tag>``), never inferred from one asset:
   manifest, member and canary checks are the store's own. ``PDFINTAKE_PACK_WHEELS`` may name a
   folder of wheels built earlier; one is used only when it hashes to its pin.
 
-A release page that answers neither (no network, a 5xx) fails the run: the network job needs GitHub.
+An API that answers neither (no network, a 5xx, a rate limit) fails the run: the network job needs GitHub.
 
 **The language runs** go through the CLI in this process, on pages drawn here from made-up lines
 on neutral topics:
@@ -205,11 +209,36 @@ def _release_tag(url: str) -> str:
     return tag
 
 
-def _release_page(tag: str) -> str:
+TOKEN_ENV = "PDFINTAKE_TEST_GITHUB_TOKEN"
+
+
+def _release_api(tag: str) -> str:
     from pdfintake.langpacks import index as I
 
-    assert I.RELEASES_PATH.endswith("/download/")
-    return f"https://{I.ENTRY_HOST}{I.RELEASES_PATH[:-len('download/')]}tag/{tag}"
+    assert I.RELEASES_PATH.endswith("/releases/download/")
+    slug = I.RELEASES_PATH[:-len("/releases/download/")].strip("/")
+    assert I.ENTRY_HOST == "github.com" and slug.count("/") == 1, (I.ENTRY_HOST, I.RELEASES_PATH)
+    return f"https://api.github.com/repos/{slug}/releases/tags/{urllib.parse.quote(tag)}"
+
+
+def _published(tag: str) -> bool | None:
+    """True when release ``tag`` is published, False when GitHub has no published release of that
+    name (none, a bare tag, a draft), None when unsure (no network, another error)."""
+    headers = {"User-Agent": "pdfintake-tests", "Accept": "application/vnd.github+json"}
+    token = os.environ.get(TOKEN_ENV)
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(_release_api(tag), headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            release = json.load(resp)
+    except urllib.error.HTTPError as exc:
+        return False if exc.code == 404 else None
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+    if release.get("tag_name") != tag:
+        return None
+    return not release.get("draft", False)
 
 
 def _sources(entries: Sequence[Any]) -> dict[str, str]:
@@ -223,11 +252,10 @@ def _sources(entries: Sequence[Any]) -> dict[str, str]:
     sources: dict[str, str] = {}
     problems: list[str] = []
     for tag, group in sorted(by_tag.items()):
-        page = _release_page(tag)
-        published = _answers(page)
+        published = _published(tag)
         if published is None:
-            pytest.fail(f"can't tell whether release {tag} is published ({page}): the network job needs GitHub",
-                        pytrace=False)
+            pytest.fail(f"can't tell whether release {tag} is published ({_release_api(tag)}): the network job "
+                        "needs GitHub", pytrace=False)
         for e in group:
             sources[e.id] = "hosted" if published else "local"
             if not published:

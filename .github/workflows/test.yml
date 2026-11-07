@@ -176,6 +176,10 @@ jobs:
         run: pdfintake doctor --json --canary --check-network
       - name: Pack fetch and language tests
         shell: bash
+        env:
+          # Read-only and job-scoped: lifts the releases API's anonymous rate limit when the tests ask
+          # whether a pack's release is published (tests/e2e/test_packs_network.py).
+          PDFINTAKE_TEST_GITHUB_TOKEN: ${{ github.token }}
         run: python -m pytest tests/e2e/test_packs_network.py
       - name: Tesseract with fetched packs
         # These tests fetch th and hu through the index and the pack store; everywhere else they

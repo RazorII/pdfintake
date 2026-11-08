@@ -10,6 +10,9 @@ pack's ``rapid-det``, ``rapid-cls`` and ``rapid-rec-latin`` under ``PDFINTAKE_TE
 from __future__ import annotations
 
 import io
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -148,6 +151,100 @@ def test_vote_writes_pngs_with_dpi_and_cleans_up(tmp_path: Path) -> None:
     assert all(p.dpi == 150.0 for p in voter.pages)
     assert {(p.width, p.height) for p in voter.pages} == {(600, 400), (400, 600)}
     assert list(tmp_path.iterdir()) == []
+
+
+class ThreadedVoter(MarkerVoter):
+    """A MarkerVoter that takes concurrent reads and remembers the threads and the overlap."""
+
+    def __init__(self, **kw: Any) -> None:
+        super().__init__(**kw)
+        self.lock = threading.Lock()
+        self.threads: set[int] = set()
+        self.now = self.peak = 0
+
+    def read(self, page: PageImage, *, timeout_s: float) -> EngineRead:
+        with self.lock:
+            self.threads.add(threading.get_ident())
+            self.now += 1
+            self.peak = max(self.peak, self.now)
+        try:
+            time.sleep(0.05)
+            with self.lock:
+                return super().read(page, timeout_s=timeout_s)
+        finally:
+            with self.lock:
+                self.now -= 1
+
+
+@pytest.mark.parametrize("shown", TURNS)
+def test_vote_with_a_pool_reads_the_four_turns_at_once_and_votes_the_same(shown: int, tmp_path: Path) -> None:
+    displayed = orient.turn_image(marker_page(), shown)
+    alone = orient.vote(displayed, 2, MarkerVoter(), dpi=150.0)
+    voter = ThreadedVoter()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        together = orient.vote(displayed, 2, voter, dpi=150.0, workdir=tmp_path, pool=pool)
+    assert together == alone
+    assert voter.peak == 4 and threading.get_ident() not in voter.threads
+    assert list(tmp_path.iterdir()) == []                    # every turned copy removed
+
+
+@pytest.mark.parametrize("fail", ["raise", "failed"])
+def test_vote_with_a_pool_scores_a_failed_read_as_no_text(fail: str) -> None:
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        v = orient.vote(marker_page(), 0, ThreadedVoter(fail=fail), pool=pool)
+    assert (v.turn_cw, v.margin, v.boxes) == (0, 0.0, 0)
+
+
+def test_thread_voters_give_each_thread_its_own_session_and_close_them_all(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pdfintake import flow
+
+    opened: list[MarkerVoter] = []
+    closed: list[MarkerVoter] = []
+
+    class Session(MarkerVoter):
+        def __init__(self) -> None:
+            super().__init__()
+            self.threads: set[int] = set()
+            opened.append(self)
+
+        def read(self, page: PageImage, *, timeout_s: float) -> EngineRead:
+            self.threads.add(threading.get_ident())
+            time.sleep(0.05)
+            return super().read(page, timeout_s=timeout_s)
+
+        def close(self) -> None:
+            closed.append(self)
+
+    monkeypatch.setattr(flow, "_open_voter", lambda base: Session())
+    first = Session()
+    voters = flow._ThreadVoters(first, base=None)  # type: ignore[arg-type]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        v = orient.vote(marker_page(), 0, voters, pool=pool)
+    voters.close()
+    assert v.turn_cw == 0 and v.margin >= orient.VOTE_CONFIDENT_MARGIN
+    assert len(opened) == 4 and first.threads                # the first session is reused, three more opened
+    assert all(len(s.threads) == 1 for s in opened)          # never shared across threads
+    assert sorted(map(id, closed)) == sorted(map(id, opened))
+
+
+def test_thread_voters_a_thread_that_cant_open_reads_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pdfintake import flow
+
+    monkeypatch.setattr(flow, "_open_voter", lambda base: None)
+    voters = flow._ThreadVoters(MarkerVoter(), base=None)  # type: ignore[arg-type]
+    both = threading.Barrier(2)
+
+    def ask(_: int) -> str:
+        both.wait()                                          # two threads ask at once
+        try:
+            voters._session()
+        except EngineFailure as exc:
+            return exc.code
+        return "first"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        seen = sorted(pool.map(ask, range(2)))
+    assert seen == ["first", "rapidocr_unavailable"]          # the first session for one, a failed open for the other
 
 
 def test_vote_scales_large_pages_down() -> None:

@@ -26,8 +26,8 @@ is never read, even as ``-``.
 records ``flow`` saved, unchanged); an invocation that can't run at all adds ``"error": {code,
 message}`` with no records. The other commands print one JSON object with ``exit`` and their result,
 or ``exit`` and ``error``. Without ``--json`` a short human summary goes to standard output and
-errors to standard error. Output is UTF-8 everywhere (``fsutil.utf8_stdio``), so a Thai or emoji
-file name can't crash a run piped through cp1252.
+errors to standard error. Output is UTF-8 everywhere (``fsutil.utf8_stdio``), so a file name in a
+script the console's code page lacks can't crash a run piped through cp1252.
 
 **Exit codes** are the ``EXIT_*`` constants in ``errors.py``: 0 done, 1 failed, 2 usage, 3 setup,
 4 refused, 5 stale; with several records the highest priority wins (2 > 3 > 1 > 4 > 5 > 0). The kit
@@ -104,7 +104,7 @@ class _Parser(argparse.ArgumentParser):
 
 
 def _lang_codes(value: str | None, flag: str) -> tuple[str, ...]:
-    """``th,en`` -> ``("th", "en")``; ``flow`` checks each code.
+    """``de,fr`` -> ``("de", "fr")``; ``flow`` checks each code.
 
     A value with no code in it (``''``, ``' '``, ``','``, as an empty variable in a caller's script
     gives) is exit 2, never read as "no language given" (decided 2026-11-05).
@@ -152,7 +152,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="leave pages that carry another tool's invisible text layer as they are")
     p.add_argument("--overwrite", action="store_true", help="replace an output that already exists")
     p.add_argument("--plan", action="store_true", help="say what would be done and downloaded; write nothing")
-    p.add_argument("--workers", type=int, default=None, metavar="N", help="pages read at once (1-16)")
+    p.add_argument("--workers", type=int, default=None, metavar="N", help="engine reads at once (1-16)")
     p.add_argument("--passwords-file", metavar="FILE",
                    help="the saved passwords to try on a password-protected file (default: the config folder's "
                         "'passwords' file, when it exists)")

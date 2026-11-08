@@ -542,6 +542,27 @@ def _workers(workers: Any) -> int:
     return max(1, workers)
 
 
+class _Done:
+    """A value that is already there, with a future's ``result()``."""
+
+    def __init__(self, value: Any) -> None:
+        self._value = value
+
+    def result(self) -> Any:
+        return self._value
+
+
+def _spawn(engines: ThreadPoolExecutor | None, fn: Callable[[], Any]) -> Any:
+    """``fn`` on the pass's engine threads (a future), or here and now when there are none.
+
+    A pass has as many engine threads as workers, whichever page asks: a page's reads run side by
+    side, and the pass never runs more reads at once than it has workers, because each RapidOCR
+    session's threads are sized for that many (``rapid.INTRA_OP_THREADS``). The page workers only
+    render-wait, plan and combine; every engine read, probe included, runs on an engine thread, and
+    the sessions stay per engine thread for the whole pass."""
+    return engines.submit(fn) if engines is not None else _Done(fn())
+
+
 # --------------------------------------------------------------------------- pass 1
 
 @dataclass(frozen=True)
@@ -572,6 +593,7 @@ class _Gather:
     probes: list[_ProbeUse]
     calib: Any
     watch: FailureWatch = field(default_factory=FailureWatch)
+    engines: ThreadPoolExecutor | None = None
 
 
 def _osd_session(ctx: _Gather) -> Any:
@@ -655,22 +677,35 @@ def _missing_use_read(role: str) -> EngineRead:
 
 
 def _page_signals(ctx: _Gather, page: PageImage, given: Any) -> tuple[PageSignals, OsdResult | None]:
-    """Pass 1 for one page (runs in a worker): OSD, the eng read, the checker read, probes, trigger, windows."""
+    """Pass 1 for one page (runs in a worker): OSD; then the eng read, the checker read and the probes,
+    side by side on the engine threads (``_spawn``); then the trigger and the windows.
+
+    The probes run on a page the script call leaves Latin or undecided, and only OSD can make it
+    anything else (``detect.script_call`` names a non-Latin script from OSD alone; the eng read can
+    only make it Latin). So OSD's call by itself says whether they run, and they start with the reads
+    instead of after them; the signals are the same either way."""
     osd = _page_osd(ctx, page) if given is _MISSING else given
-    eng = _read(ctx.sessions, ctx.eng, page, ctx.watch) if ctx.eng is not None else _missing_use_read("reader")
-    checker = _read(ctx.sessions, ctx.checker, page, ctx.watch) if ctx.checker is not None else None
+    probing = detect.script_call(osd).name is None
+    eng_at = _spawn(ctx.engines, lambda: _read(ctx.sessions, ctx.eng, page, ctx.watch)) if ctx.eng is not None else None
+    chk_at = (_spawn(ctx.engines, lambda: _read(ctx.sessions, ctx.checker, page, ctx.watch))
+              if ctx.checker is not None else None)
+    probe_at = [(p, _spawn(ctx.engines, lambda p=p: _probe(ctx, page, p))) for p in ctx.probes] if probing else []
+    eng = eng_at.result() if eng_at is not None else _missing_use_read("reader")
+    checker = chk_at.result() if chk_at is not None else None
     sc = detect.script_call(osd, read=eng)
     probes: dict[str, ProbeResult] = {}
+    for p, at in probe_at:
+        pr = at.result()
+        if pr is not None:
+            probes[p.pack_id] = pr
     mixed = MixedScript(False, None, 0, None)
     windows: list[detect.LangWindow] = []
     if sc.name is None or sc.name == "Latin":
-        for p in ctx.probes:
-            pr = _probe(ctx, page, p)
-            if pr is not None:
-                probes[p.pack_id] = pr
         if not _fired(probes):
             mixed = _mixed(ctx, page, eng)
         windows = detect.language_windows(eng)
+    else:
+        probes = {}
     return PageSignals(page.index, osd, sc, eng, checker, probes, windows, mixed), osd
 
 
@@ -734,6 +769,7 @@ def gather(pdf: Path, classes: Sequence[PageClass], base: InstalledPack, install
     warns: dict[int, list[str]] = {}
     notes: dict[int, list[str]] = {}
     executor = ThreadPoolExecutor(max_workers=n, thread_name_prefix="pdfintake-ocr")
+    ctx.engines = ThreadPoolExecutor(max_workers=n, thread_name_prefix="pdfintake-engine") if n > 1 else None
     try:
         pending: set[Future[Any]] = set()
         with Renderer(Path(pdf)) as renderer:
@@ -758,6 +794,8 @@ def gather(pdf: Path, classes: Sequence[PageClass], base: InstalledPack, install
         results = [f.result() for f in futures]
     finally:
         executor.shutdown(wait=True, cancel_futures=True)
+        if ctx.engines is not None:                    # after the page workers, which wait on it
+            ctx.engines.shutdown(wait=True, cancel_futures=True)
         sessions.close()
     signals = [r[0] for r in results]
     found = {page.index: r[1] for page, r in zip(pages, results)}
@@ -1451,8 +1489,9 @@ def _page_script(plan: PagePlan, sig: PageSignals | None) -> ScriptCall:
 
 def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: PageSignals | None,
                reuse: Mapping[str, EngineRead], extra: Sequence[str], sessions: _Sessions,
-               pool: Mapping[str, InstalledPack]) -> PageOCR:
-    """Pass 2 for one page (runs in a worker)."""
+               pool: Mapping[str, InstalledPack], engines: ThreadPoolExecutor | None = None) -> PageOCR:
+    """Pass 2 for one page (runs in a worker). The page's reads run side by side on the engine
+    threads (``_spawn``) and are taken in the reader set's order."""
     script = _page_script(plan, sig)
     warnings = [*plan.warnings, *extra]
     if prep is None:                                     # planned with no pack: no reads, no layer
@@ -1460,12 +1499,16 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
         return PageOCR(page.index, script, list(plan.languages), None, plan.composition, [], pick, [], {}, {},
                        _dedupe(warnings))
     reads: list[EngineRead] = []
+    pending: list[Any] = []
     for u in prep.uses:
         raw = reuse.get(u.key)
         if raw is not None:
-            read = dataclasses.replace(raw, use_id=u.use.id, role=u.use.role, meta={**(raw.meta or {}), "pass1": True})
+            pending.append(_Done(dataclasses.replace(raw, use_id=u.use.id, role=u.use.role,
+                                                     meta={**(raw.meta or {}), "pass1": True})))
         else:
-            read = _read(sessions, u, page)
+            pending.append(_spawn(engines, lambda u=u: _read(sessions, u, page)))
+    for at in pending:
+        read = at.result()
         reads.append(dataclasses.replace(read, lines=textfix.apply_normalizers(prep.normalize, read.lines)))
     by_id = {r.use_id: r for r in reads}
     pick = prep.rule.pick(by_id, prep.pick_params, fallback=prep.rs.fallback, checker_id=prep.checker_id)
@@ -1550,14 +1593,17 @@ def read_pages(pages: Sequence[PageImage], plans: Sequence[PagePlan], packs: Map
     extra = signals.warnings if signals is not None else {}
     sessions = _Sessions(base)
     executor = ThreadPoolExecutor(max_workers=n, thread_name_prefix="pdfintake-read")
+    engines = ThreadPoolExecutor(max_workers=n, thread_name_prefix="pdfintake-engine") if n > 1 else None
     try:
         futures = [executor.submit(_read_page, prepared.get(pp.pack) if pp.pack is not None else None,
                                    by_index[pp.index], pp, sigs.get(pp.index), reuse.get(pp.index, {}),
-                                   list(extra.get(pp.index, ())), sessions, pool)
+                                   list(extra.get(pp.index, ())), sessions, pool, engines)
                    for pp in plan_list]
         return [f.result() for f in futures]
     finally:
         executor.shutdown(wait=True, cancel_futures=True)
+        if engines is not None:                        # after the page workers, which wait on it
+            engines.shutdown(wait=True, cancel_futures=True)
         sessions.close()
 
 

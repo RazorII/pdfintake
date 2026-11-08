@@ -524,6 +524,89 @@ def test_one_session_per_thread_and_language_string_and_one_shared_session(tmp_p
     assert all(s.closed for s in tess.sessions + shared.sessions)           # every session closed at the end
 
 
+class Overlap:
+    """Counts the reads in flight across every fake session: the peak, and the threads that read."""
+
+    def __init__(self, monkeypatch: pytest.MonkeyPatch, delay: float = 0.05) -> None:
+        self.lock = threading.Lock()
+        self.now = 0
+        self.peak = 0
+        self.threads: set[int] = set()
+        real = FakeSession.read
+
+        def read(session: FakeSession, page: PageImage, *, timeout_s: float) -> EngineRead:
+            with self.lock:
+                self.now += 1
+                self.peak = max(self.peak, self.now)
+                self.threads.add(threading.get_ident())
+            try:
+                time.sleep(delay)
+                return real(session, page, timeout_s=timeout_s)
+            finally:
+                with self.lock:
+                    self.now -= 1
+
+        monkeypatch.setattr(FakeSession, "read", read)
+
+
+def signals_view(sig: pipeline.DocumentSignals) -> list[Any]:
+    return [(s.index, s.script, [ln.text for ln in s.eng_read.lines],
+             [ln.text for ln in s.checker_read.lines] if s.checker_read else None,
+             {k: (v.chars, v.lines) for k, v in s.probes.items()}, s.windows, s.mixed) for s in sig.signals]
+
+
+def test_a_pages_pass_1_reads_run_side_by_side(tmp_path: Path, fakes: dict[str, FakeOcr],
+                                               monkeypatch: pytest.MonkeyPatch):
+    over = Overlap(monkeypatch)
+    root = tmp_path / "packs"
+    en, th = base_pack(root), thai_pack(root)
+    pipeline.gather(image_pdf(tmp_path / "w.pdf", 1), [page_class(0)], en, {"en": en, "th": th}, KEY,
+                    tmp_path / "work", workers=4, osd={0: None})
+    assert fakes["fk_tess"].calls("en") == [0] and fakes["fk_chk"].calls() == [0] and fakes["fk_probe"].calls() == [0]
+    assert over.peak == 3                                     # eng, checker and the Thai probe at once
+
+
+def test_pass_1_never_reads_more_pages_at_once_than_it_has_workers(tmp_path: Path, fakes: dict[str, FakeOcr],
+                                                                   monkeypatch: pytest.MonkeyPatch):
+    over = Overlap(monkeypatch, delay=0.02)
+    root = tmp_path / "packs"
+    en, th = base_pack(root), thai_pack(root)
+    n = 6
+    pipeline.gather(image_pdf(tmp_path / "w.pdf", n), [page_class(i) for i in range(n)], en, {"en": en, "th": th},
+                    KEY, tmp_path / "work", workers=2, osd={i: None for i in range(n)})
+    assert over.peak == 2 and len(over.threads) == 2         # two engine threads read every page
+
+
+def test_pass_1_signals_are_the_same_side_by_side_and_one_after_another(tmp_path: Path, fakes: dict[str, FakeOcr]):
+    root = tmp_path / "packs"
+    en, th = base_pack(root), thai_pack(root)
+    pdf = image_pdf(tmp_path / "w.pdf", 3)
+    osd = {0: THAI_OSD, 1: None, 2: None}
+    one = pipeline.gather(pdf, [page_class(i) for i in range(3)], en, {"en": en, "th": th}, KEY, tmp_path / "w1",
+                          workers=1, osd=osd)
+    probes_one = fakes["fk_probe"].calls()
+    fakes["fk_probe"].reads.clear()
+    many = pipeline.gather(pdf, [page_class(i) for i in range(3)], en, {"en": en, "th": th}, KEY, tmp_path / "w4",
+                           workers=4, osd=osd)
+    assert signals_view(one) == signals_view(many)
+    assert probes_one == fakes["fk_probe"].calls() == [1, 2]   # OSD's Thai call alone keeps page 0 unprobed
+
+
+def test_a_pages_pass_2_reads_run_side_by_side_in_the_sets_order(tmp_path: Path, fakes: dict[str, FakeOcr],
+                                                                  monkeypatch: pytest.MonkeyPatch):
+    over = Overlap(monkeypatch)
+    root = tmp_path / "packs"
+    en, th = base_pack(root), thai_pack(root)
+    [page] = pipeline.read_pages(pages_for(tmp_path, 1), [plan_for(0, "th", script="Thai")], {"th": th}, en, KEY,
+                                 signals=None, workers=2)
+    assert over.peak == 2
+    assert [r.use_id for r in page.reads] == ["thr", "checker"]
+    (tmp_path / "serial").mkdir()
+    [serial] = pipeline.read_pages(pages_for(tmp_path / "serial", 1), [plan_for(0, "th", script="Thai")], {"th": th},
+                                   en, KEY, signals=None, workers=1)
+    assert [ln.text for ln in serial.pick.lines] == [ln.text for ln in page.pick.lines]
+
+
 class ClosableOsd:
     def __init__(self, opened: list["ClosableOsd"]) -> None:
         self.closed = False
@@ -956,7 +1039,9 @@ def test_an_engine_that_cant_open_is_tried_once_per_pass_across_threads(tmp_path
                               signals=None, workers=workers)
     assert all(o.reads[1].status == "failed" for o in ocr)
     assert len(two.opens) == 1
-    assert len({r[3] for r in fakes["fk_tess"].reads}) >= 2     # the working reader still opens per thread
+    tess = fakes["fk_tess"]                                     # the working reader still opens per thread
+    assert tess.sessions and all(len(s.threads) == 1 for s in tess.sessions)
+    assert len(tess.sessions) == len({r[3] for r in tess.reads})
 
 
 def test_pass_1_reads_are_reused_only_on_the_render_they_read(tmp_path: Path, fakes: dict[str, FakeOcr]):

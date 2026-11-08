@@ -94,9 +94,11 @@ import secrets
 import shutil
 import stat
 import sys
+import threading
 import time
 import unicodedata
 from collections.abc import Iterator, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -258,6 +260,51 @@ def _open_voter(base: InstalledPack) -> Any:
         raise
     except (EngineFailure, PackError, SetupError, ImportError):
         return None
+
+
+class _ThreadVoters:
+    """The orientation voter as one RapidOCR session per thread, so the vote's four turns can be read
+    at once. ``first`` (the session whose open told the run the voter works) goes to the first thread
+    that reads; every other thread opens its own on its first read, through ``_open_voter``, so its
+    models are hash-checked right before that open (DESIGN §11.2). A thread whose open fails reads
+    nothing (EngineFailure, which the vote scores as no text); a tampered model raises IntegrityError
+    and stops the file, as it would on the first thread."""
+
+    def __init__(self, first: Any, base: InstalledPack) -> None:
+        self._base = base
+        self._spare: Any = first
+        self._local = threading.local()
+        self._lock = threading.Lock()
+        self._opened: list[Any] = [first]
+
+    def _session(self) -> Any:
+        session = getattr(self._local, "session", None)
+        if session is not None:
+            return session
+        with self._lock:
+            session, self._spare = self._spare, None
+        if session is None:
+            session = _open_voter(self._base)
+            if session is None:
+                raise EngineFailure("rapidocr_unavailable", "the orientation voter couldn't open on this thread")
+            with self._lock:
+                self._opened.append(session)
+        self._local.session = session
+        return session
+
+    def read(self, page: Any, *, timeout_s: float) -> Any:
+        return self._session().read(page, timeout_s=timeout_s)
+
+    def close(self) -> None:
+        with self._lock:
+            sessions, self._opened = self._opened, []
+        for session in sessions:
+            close = getattr(session, "close", None)
+            if close is not None:
+                try:
+                    close()
+                except Exception:                      # noqa: BLE001 - closing never fails a file
+                    pass
 
 
 def _open_osd(base: InstalledPack) -> Any:
@@ -1609,14 +1656,17 @@ def _orient_read(d: _Doc, src: Path, pages: Sequence[int], base: InstalledPack
     watch = pipeline.FailureWatch()
     voter = _open_voter(base)
     osd = _open_osd(base)
-    watched = pipeline.watch_session(voter, watch)    # orient.vote swallows a failed read; the watch sees it
+    n = min(len(orient.TURNS), d.opts.workers)
+    voters = _ThreadVoters(voter, base) if voter is not None and n > 1 else voter
+    watched = pipeline.watch_session(voters, watch)   # orient.vote swallows a failed read; the watch sees it
+    pool = ThreadPoolExecutor(max_workers=n, thread_name_prefix="pdfintake-orient") if voters is not voter else None
     try:
         with Renderer(src) as r:
             for i in pages:
                 if watched is not None:
                     img = r.render_scaled(i, VOTE_DPI)
                     try:
-                        v = orient.vote(img, i, watched, dpi=VOTE_DPI, workdir=d.work / "orient")
+                        v = orient.vote(img, i, watched, dpi=VOTE_DPI, workdir=d.work / "orient", pool=pool)
                     finally:
                         img.close()
                 else:
@@ -1634,7 +1684,9 @@ def _orient_read(d: _Doc, src: Path, pages: Sequence[int], base: InstalledPack
                 votes[i] = v
                 osd_map[i] = o
     finally:
-        for session in (voter, osd):
+        if pool is not None:
+            pool.shutdown(wait=True, cancel_futures=True)
+        for session in (voters, osd):
             close = getattr(session, "close", None)
             if close is not None:
                 try:

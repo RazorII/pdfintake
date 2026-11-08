@@ -40,6 +40,8 @@ from ..errors import EngineFailure
 from ..types import EngineRead, OsdResult, PageImage
 
 if TYPE_CHECKING:
+    from concurrent.futures import Executor
+
     import PIL.Image
     import pikepdf
 
@@ -109,7 +111,8 @@ class OrientReport:
 # --------------------------------------------------------------------------- vote
 
 def vote(image: "PIL.Image.Image", page: int, voter: "EngineSession", *, dpi: float | None = None,
-         workdir: Path | None = None, timeout_s: float = VOTE_TIMEOUT_S) -> OrientVote:
+         workdir: Path | None = None, timeout_s: float = VOTE_TIMEOUT_S,
+         pool: "Executor | None" = None) -> OrientVote:
     """Read the displayed page at the four right angles and return the clockwise turn that reads best.
 
     ``image`` is the page as displayed (rendered honouring ``/Rotate``). Each turned copy is written
@@ -117,6 +120,11 @@ def vote(image: "PIL.Image.Image", page: int, voter: "EngineSession", *, dpi: fl
     ``voter``; an engine failure or a non-ok read scores 0 for that turn. ``margin`` is the best score
     over the runner-up (floored at ``VOTE_SCORE_FLOOR``); ``boxes`` counts the horizontal text boxes
     of the winning turn, 0 when nothing was read.
+
+    With a ``pool``, the four copies are read at once, one read per worker, so ``voter`` must take
+    concurrent reads (``flow`` passes one RapidOCR session per worker thread). Each turn is still
+    its own read of its own copy, so the vote is the same as one read after another: one session
+    per read leaves most of the cores idle (its threads are sized for four reads at once).
     """
     from PIL import Image
 
@@ -132,10 +140,10 @@ def vote(image: "PIL.Image.Image", page: int, voter: "EngineSession", *, dpi: fl
     boxes: dict[int, int] = {}
     if workdir is not None:
         Path(workdir).mkdir(parents=True, exist_ok=True)
-        _vote_all(img, page, voter, Path(workdir), src_dpi, timeout_s, scores, boxes)
+        _vote_all(img, page, voter, Path(workdir), src_dpi, timeout_s, scores, boxes, pool)
     else:
         with tempfile.TemporaryDirectory(prefix="pdfintake-orient-") as tmp:
-            _vote_all(img, page, voter, Path(tmp), src_dpi, timeout_s, scores, boxes)
+            _vote_all(img, page, voter, Path(tmp), src_dpi, timeout_s, scores, boxes, pool)
     best = max(TURNS, key=lambda r: (scores[r], -r))          # ties go to the smaller turn, 0 first
     ranked = sorted(scores.values(), reverse=True)
     if ranked[0] <= 0.0:
@@ -145,23 +153,33 @@ def vote(image: "PIL.Image.Image", page: int, voter: "EngineSession", *, dpi: fl
 
 
 def _vote_all(img: "PIL.Image.Image", page: int, voter: "EngineSession", folder: Path, dpi: float,
-              timeout_s: float, scores: dict[int, float], boxes: dict[int, int]) -> None:
-    for r in TURNS:
-        turned = turn_image(img, r)
-        path = folder / f"orient-{page:04d}-{r:03d}.png"
-        turned.save(path, format="PNG", dpi=(dpi, dpi))
-        w, h = turned.size
-        pi = PageImage(index=page, path=path, width=w, height=h, dpi=dpi,
-                       cropbox=(0.0, 0.0, w * 72.0 / dpi, h * 72.0 / dpi))
-        try:
-            read = voter.read(pi, timeout_s=timeout_s)
-        except EngineFailure:
-            read = None
-        scores[r], boxes[r] = _score(read)
-        try:
-            os.unlink(path)
-        except OSError:
-            pass
+              timeout_s: float, scores: dict[int, float], boxes: dict[int, int],
+              pool: "Executor | None" = None) -> None:
+    copies: list[tuple[int, PageImage]] = []
+    try:
+        for r in TURNS:
+            turned = turn_image(img, r)
+            path = folder / f"orient-{page:04d}-{r:03d}.png"
+            turned.save(path, format="PNG", dpi=(dpi, dpi))
+            w, h = turned.size
+            copies.append((r, PageImage(index=page, path=path, width=w, height=h, dpi=dpi,
+                                        cropbox=(0.0, 0.0, w * 72.0 / dpi, h * 72.0 / dpi))))
+
+        def read(copy: tuple[int, PageImage]) -> tuple[int, EngineRead | None]:
+            try:
+                return copy[0], voter.read(copy[1], timeout_s=timeout_s)
+            except EngineFailure:
+                return copy[0], None
+
+        reads = list(pool.map(read, copies)) if pool is not None else [read(c) for c in copies]
+        for r, got in reads:
+            scores[r], boxes[r] = _score(got)
+    finally:
+        for _, pi in copies:
+            try:
+                os.unlink(pi.path)
+            except OSError:
+                pass
 
 
 def _score(read: EngineRead | None) -> tuple[float, int]:

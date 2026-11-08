@@ -1482,6 +1482,16 @@ class _Win:
         return getattr(sys, name)
 
 
+class _Posix:
+    """``sys`` as fsutil sees it, with ``platform`` linux: the off-Windows half of a test must not
+    depend on the runner, since CI runs every test on Windows too."""
+
+    platform = "linux"
+
+    def __getattr__(self, name: str):
+        return getattr(sys, name)
+
+
 def _busy_error(winerror: int = 32) -> PermissionError:
     exc = PermissionError(13, "The process cannot access the file because it is being used by another process")
     exc.winerror = winerror                 # what Windows' OSError carries; set by hand off Windows
@@ -1489,7 +1499,8 @@ def _busy_error(winerror: int = 32) -> PermissionError:
 
 
 def test_windows_busy_is_only_errors_5_and_32_on_windows(monkeypatch):
-    assert not fsutil.windows_busy(_busy_error(32))              # not on Windows here
+    monkeypatch.setattr(fsutil, "sys", _Posix())
+    assert not fsutil.windows_busy(_busy_error(32))              # macOS / Linux: never busy
     monkeypatch.setattr(fsutil, "sys", _Win())
     assert fsutil.windows_busy(_busy_error(5)) and fsutil.windows_busy(_busy_error(32))
     assert not fsutil.windows_busy(_busy_error(3)) and not fsutil.windows_busy(PermissionError(13, "denied"))
@@ -1519,6 +1530,7 @@ def test_retry_busy_raises_at_once_off_windows_and_for_other_errors(monkeypatch)
     def op():
         raise _busy_error(32)
 
+    monkeypatch.setattr(fsutil, "sys", _Posix())
     with pytest.raises(PermissionError):
         fsutil.retry_busy(op)                                     # macOS / Linux: no retry
     monkeypatch.setattr(fsutil, "sys", _Win())

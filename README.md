@@ -61,6 +61,8 @@ pdfintake run 'scan.pdf' --plan                          # what it would do and 
 pdfintake passwords add --from-file 'pw.txt'             # save a password for later runs
 pdfintake apply r-20261105-1a2b3c4d --choice smaller     # act on a run's offer later: the smaller copy
 pdfintake apply r-20261105-5e6f7a8b --lang hr            # act on a run's offer later: read again as Croatian
+pdfintake thorough status                                # thorough mode (Apple silicon): what it needs, whether it's on
+pdfintake run 'scan.pdf' --thorough                      # this run in thorough mode, once it's set up
 pdfintake doctor --canary                                # test every engine on a known image
 pdfintake packs list                                     # language packs, installed or available
 pdfintake record show r-20261105-1a2b3c4d                # a saved record again
@@ -82,6 +84,7 @@ pdfintake never prompts and never waits for an answer. It writes a JSON **record
 
 - **Language**: some pages could be read again with another language pack: `pdfintake apply <record id> --lang <code>`.
 - **Smaller copy**: a smaller copy would save at least 30% and still look the same: `pdfintake apply <record id> --choice smaller`.
+- **Thorough mode** (a Mac with Apple silicon, while you haven't decided): the document could be read again with dots.mocr beside the regular readers (below): `pdfintake apply <record id> --choice thorough`, once it's set up.
 
 Everything else is a flag:
 
@@ -113,7 +116,7 @@ XFA forms are still refused, because their pages are drawn only when they're vie
 | 0 | Done (read the warnings and offers anyway), including a file skipped because no saved password opened it |
 | 1 | A file failed, including a failed check or an input pdfintake can't place without losing data |
 | 2 | Bad arguments, an output that exists or would hit an input, mixed PDFs and images, an input that is missing or isn't a regular file (`input_not_file`: a folder, a pipe or a device), `--overwrite` for a searchable copy (`copy_never_overwrites`), an output open in another program on Windows (`output_in_use`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`); for `apply`, an unknown record or a flag that doesn't fit the offer |
-| 3 | Setup: the English data missing or broken, an unsupported platform, a broken model |
+| 3 | Setup: the English data missing or broken, an unsupported platform, a broken model; for `pdfintake thorough enable`, a machine that can't run it, its libraries missing, no room, or a failed download or test read; for `apply --choice thorough`, thorough mode not set up yet (`thorough_not_ready`) |
 | 4 | Refused, nothing written: for `run`, an XFA form, metadata that can't be read, a damaged file, or one the two detectors disagree about; for `apply --choice smaller`, the same checks on the original again, or a file kept as a searchable copy, which never gets a smaller version (`no_smaller_for_a_copy`) |
 | 5 | Stale: the input changed during the run, or since the record |
 | 6 | Kit only: a must-survive or metric floor failed |
@@ -126,10 +129,29 @@ Stopped by SIGTERM or SIGHUP (a closed terminal, a service manager stopping it),
 
 ## How it reads text
 
-- **Engines.** Tesseract (through tesserocr, in process), RapidOCR on onnxruntime, and on a Mac, Apple Vision. Each language pack says which engines read its pages on each platform and how their reads are combined, chosen by benchmark, not by hand.
+- **Engines.** Tesseract (through tesserocr, in process), RapidOCR on onnxruntime, and on a Mac, Apple Vision; with thorough mode on Apple silicon, dots.mocr too (below). Each language pack says which engines read its pages on each platform and how their reads are combined, chosen by benchmark, not by hand.
 - **Language packs are data only**: models, fonts and a test image, with a SHA-256 for every file. The pack list and each pack's fingerprint ship inside pdfintake, and every file is checked every time it's used. Packs are attached to this repo's GitHub releases, which are immutable: once published, a release's files and tag can't change.
 - **No other programs.** While it runs, pdfintake never starts another process (no Ghostscript, no `ocrmypdf`, no command-line `tesseract`), and a runtime guard enforces it.
 - **Apple Vision** is tested on every release on a real Mac, because GitHub's macOS machines may not run it.
+
+### Thorough mode (Apple silicon, opt-in)
+
+On a Mac with Apple silicon, pdfintake can also read every OCR page with [dots.mocr](https://huggingface.co/rednote-hilab/dots.mocr), a vision-language OCR model that runs on the Mac's GPU. It never reads a page alone, and it doesn't replace the regular readers:
+
+- **On Latin-script pages** it adds the numbers the text layer lacks and the lines in another writing system (a Greek or Cyrillic line on a German page). On the benchmark pages of the nine Latin-script languages that lifted word recall from 0.945 to 0.967 (pages with a second script: 0.882 to 0.969) and digit runs from 0.977 to 0.988, and no page read worse.
+- **On Thai pages** it competes with the other readers, and its read is chosen only where they back it up, so a blank or looping read never wins.
+- **What it costs:** about 17 seconds more a page on an M-series Mac, a one-time 4.4 GB download from Hugging Face, and the `pdfintake[thorough]` libraries (`mlx`, `tokenizers`). Now and then it adds a wrong extra word or number to the invisible text: 98 on the 108 benchmark pages, nearly all on pages of tiny print or with a second script.
+
+It's off until you turn it on:
+
+```
+uv tool install --reinstall 'pdfintake[thorough] @ git+https://github.com/RazorII/pdfintake'
+pdfintake thorough enable          # downloads and checks the model, reads a test page, turns it on
+pdfintake thorough disable         # off again; --remove also deletes the model
+pdfintake thorough decline         # "no thanks": records stop offering it (enable still works)
+```
+
+`pdfintake thorough enable` exits 3 with one of these codes when it can't: `thorough_not_supported` (not a Mac with Apple silicon, or macOS older than 14), `thorough_libraries_missing` (the message gives the install command), `thorough_no_room`, `thorough_download_failed`, `thorough_download_refused`, `thorough_download_size`, `thorough_redirect_refused` (a download sent anywhere but Hugging Face), `thorough_model_changed` (a file arrived with another SHA-256; nothing is kept) or `thorough_canary_failed` (the test page didn't read back; the mode stays off). `run --thorough` and `--no-thorough` override the setting for one run. Until you decide, every record written on such a Mac carries a `thorough` offer, and `pdfintake apply <record id> --choice thorough` reads that document again in the mode. Off a Mac with Apple silicon nothing changes, and with the mode off every output is byte for byte what it would have been.
 
 ## What it doesn't do (yet)
 

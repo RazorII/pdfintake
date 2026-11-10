@@ -119,6 +119,19 @@ def _block_network(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPat
         _GUARD["on"] = False
 
 
+@pytest.fixture(autouse=True)
+def _thorough_isolated(monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory):
+    """Thorough mode (DESIGN §14) never reads the user's own setting in a test, and no record offers it
+    unless the test asks: the offer depends on the machine (Apple silicon), so it would make the same
+    run's record differ between CI runners."""
+    from pdfintake import flow, thorough
+
+    folder = tmp_path_factory.mktemp("thorough-config")
+    monkeypatch.setattr(thorough, "setting_path", lambda: folder / thorough.SETTING_FILE)
+    monkeypatch.setattr(flow, "_thorough_offered", lambda: False)
+    yield
+
+
 @pytest.fixture
 def network_attempts() -> list[tuple[str, str]]:
     """The socket operations refused so far in this test: (audit event, its arguments)."""

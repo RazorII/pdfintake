@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -376,6 +377,65 @@ def _step(name: str, version: int) -> FillStep:
         known = ", ".join(f"{n} v{v}" for n, v in FILLS)
         raise PackError("unknown_fill", f"unknown fill {name!r} v{version!r}; this version of pdfintake knows {known}",
                         fill=name, version=version) from None
+
+
+_SCRIPT_WORD = re.compile(r"[^\W\d_]{2,}")
+
+
+def script_words(read: EngineRead, chosen: Sequence[Line], covered: frozenset[str]) -> list[Fill]:
+    """Thorough mode's word fill (DESIGN §14.1): every occurrence in ``read`` of a word whose letters
+    are all in a script outside ``covered`` (the pack's scripts) beyond the occurrences the chosen text
+    already has, one fill per line of ``read`` with that line's box. So a Greek sentence printed four
+    times on a German page goes in four times, each where it is printed, as it was measured (the
+    words dots read, less the words the layer has, counted). A German word the pack read differently
+    doesn't go in: on text the pack reads, the extra words were half junk when measured. Not a pack
+    step: thorough mode adds it, whatever the pack lists."""
+    from .scripts import INHERITED, script_of
+
+    if read.status != "ok" or not read.lines:
+        return []
+    have = Counter(w.casefold() for ln in chosen for w in _SCRIPT_WORD.findall(ln.text))
+    out: list[Fill] = []
+    for ln in read.lines:
+        missing: list[str] = []
+        for w in _SCRIPT_WORD.findall(ln.text):
+            names = {script_of(ch) for ch in w if ch.isalpha()} - {None, INHERITED}
+            if not names or names & covered:
+                continue
+            key = w.casefold()
+            if have[key] > 0:                     # the chosen text has this occurrence already
+                have[key] -= 1
+                continue
+            missing.append(w)
+        if missing:
+            out.append(Fill("word", " ".join(missing), ln.conf, ln.box, read.use_id))
+    return out
+
+
+def missing_numbers(read: EngineRead, chosen: Sequence[Line]) -> list[Fill]:
+    """Thorough mode's number fill (DESIGN §14.1): every number in ``read`` with a digit run the chosen
+    text lacks, counted (a run the chosen text has twice covers two occurrences), one fill per line of
+    ``read`` with that line's box, each number as ``read`` wrote it. Runs of every length count, as
+    they did when it was measured: most of what dots gives back is a one- or two-digit run the layer
+    misread ("4,5" read as "45"). Not a pack step: thorough mode adds it, whatever the pack lists."""
+    if read.status != "ok" or not read.lines:
+        return []
+    have = Counter(re.findall(r"[0-9]+", _ascii_digits("\n".join(ln.text for ln in chosen))))
+    out: list[Fill] = []
+    for ln in read.lines:
+        missing: list[str] = []
+        for m in _NUM.finditer(_ascii_digits(ln.text)):
+            lacks = False
+            for run in re.findall(r"[0-9]+", m.group()):
+                if have[run] > 0:                  # the chosen text has this occurrence already
+                    have[run] -= 1
+                else:
+                    lacks = True
+            if lacks:
+                missing.append(m.group())
+        if missing:
+            out.append(Fill("number", " ".join(missing), ln.conf, ln.box, read.use_id))
+    return out
 
 
 def run_fills(steps: Sequence["StepUse"], chosen: Sequence[Line], checker: EngineRead | None,

@@ -173,6 +173,8 @@ class RunOptions:
     (offline). ``smaller=True`` writes the smaller copy beside the lossless file wherever it clears
     the bar; otherwise the record offers it. ``passwords_file`` is the saved passwords list
     (``--passwords-file``); None reads the default one when it exists. A record never holds it.
+    ``thorough`` is ``--thorough`` (True), ``--no-thorough`` (False) or neither (None: the saved
+    ``pdfintake thorough`` setting decides, DESIGN §14).
     """
 
     provenance: Literal["ordinary", "counterparty", "evidence"] = "ordinary"
@@ -189,6 +191,7 @@ class RunOptions:
     plan_only: bool = False
     workers: int = DEFAULT_WORKERS
     passwords_file: Path | None = None
+    thorough: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -305,6 +308,35 @@ class _ThreadVoters:
                     close()
                 except Exception:                      # noqa: BLE001 - closing never fails a file
                     pass
+
+
+def _thorough_offered() -> bool:
+    """Whether a written output's record offers thorough mode: this Mac can run it and the user hasn't
+    decided yet (DESIGN §14.2). A seam the tests replace."""
+    from . import thorough
+
+    return thorough.should_offer()
+
+
+def _thorough_use(d: "_Doc", platform_key: str) -> Any:
+    """The dots use for this document's pass 2 when thorough mode reads it, else None. Asked for (the
+    flag or the saved setting) but not able to run here: warning ``thorough_unavailable``, and the
+    regular readers read alone."""
+    from . import thorough
+
+    on, why = thorough.resolve(d.opts.thorough)
+    if not on:
+        if why is not None:
+            _warn(d, "thorough_unavailable")
+        return None
+    from .ocr import pipeline
+
+    use = pipeline.thorough_use(platform_key)
+    if use is None or not use.avail.ok:
+        _warn(d, "thorough_unavailable")
+        return None
+    d.thorough = True
+    return use
 
 
 def _open_osd(base: InstalledPack) -> Any:
@@ -715,6 +747,7 @@ class _Doc:
     encrypted: bool = False
     skipped: bool = False
     copy_reasons: list[str] = field(default_factory=list)
+    thorough: bool = False                  # thorough mode read this document's OCR pages (§14)
 
 
 def _run_document(doc: _DocInput, opts: RunOptions, batch: _Batch, *, parent: str | None = None,
@@ -950,9 +983,11 @@ def _process(d: _Doc) -> None:
         d.step = "packs"
         lp, packs, fetched, broken = _ensure_packs(d, lp, index, base)
         d.step = "ocr"
-        ocr = pipeline.read_pages(signals.pages, lp.pages, packs, base, plat, signals=signals, workers=opts.workers)
+        dots = _thorough_use(d, plat)
+        ocr = pipeline.read_pages(signals.pages, lp.pages, packs, base, plat, signals=signals, workers=opts.workers,
+                                  thorough=dots)
         layer_input = pipeline.layer_pages(ocr, signals.pages, classes)
-        _step(d, "ocr", "ok", pages=len(ocr), packs=list(lp.packs_needed))
+        _step(d, "ocr", "ok", pages=len(ocr), packs=list(lp.packs_needed), thorough=d.thorough)
     elif opts.plan_only:
         _plan_record(d, None, None, classes)
         return
@@ -1057,6 +1092,8 @@ def _process(d: _Doc) -> None:
     else:
         d.rec.output = record.output_entry(ref.path, ref.sha256, ref.bytes)
     _step(d, "commit", "ok", bytes=ref.bytes)
+    if adds_layer and not d.thorough and _thorough_offered():
+        d.rec.offers.append(record.thorough_offer())
     d.rec.metadata = to_jsonable(meta.diff(meta.snapshot(d.reference), meta.snapshot(final)))
     if copy:
         if flattened or set(d.copy_reasons) & _SIGNATURE_REASONS:
@@ -2142,7 +2179,7 @@ def _smaller(d: _Doc, final: Path, ref: FileRef, adds_layer: bool) -> None:
 
 # --------------------------------------------------------------------------- apply
 
-def apply(record_id: str, *, choice: Literal["smaller"] | None = None, lang: str | None = None,
+def apply(record_id: str, *, choice: Literal["smaller", "thorough"] | None = None, lang: str | None = None,
           passwords_file: Path | None = None) -> list[Record]:
     """Act on an offer of a finished record, when a person asks for it (DESIGN §12.5).
 
@@ -2150,11 +2187,14 @@ def apply(record_id: str, *, choice: Literal["smaller"] | None = None, lang: str
     (rebuilt deterministically when staging was pruned) and returns the updated record.
     ``lang=CODE`` reads the record's inputs again with one of the languages its offer lists and
     replaces the output the earlier run wrote; it returns the new record, whose ``parent`` is
-    ``record_id``. Exit 5 when the input, the output or the candidate changed since the record;
-    exit 2 for an unknown record or an answer no offer gives.
+    ``record_id``. ``choice="thorough"`` does the same in thorough mode (DESIGN §14.2), once it is
+    set up (exit 3 naming ``pdfintake thorough enable`` otherwise). Exit 5 when the input, the
+    output or the candidate changed since the record; exit 2 for an unknown record or an answer no
+    offer gives.
     """
     if (choice is None) == (lang is None):
-        raise UsageError("one_answer", "apply takes exactly one answer: --choice smaller or --lang CODE.")
+        raise UsageError("one_answer",
+                         "apply takes exactly one answer: --choice smaller, --choice thorough or --lang CODE.")
     from .ocr import engines
 
     engines.warm_up()
@@ -2162,6 +2202,8 @@ def apply(record_id: str, *, choice: Literal["smaller"] | None = None, lang: str
         rec = record.load(record_id)
         if lang is not None:
             return _apply_lang(rec, lang, passwords_file)
+        if choice == "thorough":
+            return _apply_thorough(rec, passwords_file)
         job = _smaller_job(rec, str(choice))           # every check; nothing written yet
         _smaller_refusals(rec, job)                    # the refusal re-check (DESIGN §0.7)
         job.seal.check()
@@ -2221,7 +2263,7 @@ def _smaller_job(rec: Record, choice: str) -> _SmallerJob:
     from .pdf import smaller, verify
 
     if choice != "smaller":
-        raise UsageError("bad_choice", "--choice takes smaller.", value=str(choice)[:16])
+        raise UsageError("bad_choice", "--choice takes smaller or thorough.", value=str(choice)[:16])
     if not any(o.kind == "smaller" for o in rec.offers):
         if any(h.get("flag") == "--choice" and h.get("answer") == "smaller" for h in rec.history):
             raise UsageError("already_applied", f"The smaller copy of record {rec.id} was already saved.",
@@ -2313,6 +2355,42 @@ def _options_from_json(data: Mapping[str, Any]) -> RunOptions:
         return RunOptions(**values)
     except TypeError:
         raise StaleRecord("options_unreadable", "The record's options can't be read; run again.") from None
+
+
+def _apply_thorough(rec: Record, passwords_file: Path | None) -> list[Record]:
+    """``apply --choice thorough``: read the record's inputs again in thorough mode and replace the
+    output the earlier run wrote, as ``--lang`` does (DESIGN §14.2)."""
+    if not any(o.kind == "thorough" for o in rec.offers):
+        if any(h.get("flag") == "--choice" and h.get("answer") == "thorough" for h in rec.history):
+            raise UsageError("already_applied", f"Record {rec.id} was already read again in thorough mode.",
+                             record_id=rec.id)
+        raise UsageError("no_offer", f"Record {rec.id} doesn't offer a thorough read.", record_id=rec.id)
+    from . import thorough
+
+    on, why = thorough.resolve(True)
+    if not on:
+        raise SetupError("thorough_not_ready",
+                         f"Thorough mode isn't set up here ({why}). Set it up with 'pdfintake thorough enable', "
+                         "then apply again.", record_id=rec.id)
+    seal = _seal_of(rec)
+    seal.check()                                       # InputChanged, exit 5
+    out = _output_of(rec)                              # StaleRecord, exit 5
+    opts = _options_from_json(rec.options)
+    opts = dataclasses.replace(opts, thorough=True, overwrite=False, plan_only=False, smaller=False, out=None,
+                               outdir=None, passwords_file=passwords_file)
+    _check_options(opts)
+    _sweep_orphans(seal.paths)
+    batch = _Batch(opts, seal.paths)
+    kind = "pdf" if rec.input.get("kind") == "pdf" else "images"
+    doc = _DocInput([Path(p) for p in seal.paths], kind)
+    child = _run_document(doc, opts, batch, parent=rec.id, replaces=out)
+    _history(rec, "--choice", "thorough", child.status, child.id)
+    if child.exit == 0 and child.output is not None:
+        rec.status, rec.exit = "resolved", 0
+        rec.offers = []
+        _remove_work(platforms.cache_root() / "staging" / rec.id)
+    record.save(rec, forbid=batch.forbid)
+    return [child]
 
 
 def _apply_lang(rec: Record, lang: str, passwords_file: Path | None) -> list[Record]:

@@ -5,6 +5,8 @@
 * the platform (and whether pdfintake supports it), Python and pdfintake's versions, the OS;
 * each registered OCR engine: whether it runs on this platform, and its version;
 * Apple Vision's revision 3 languages on this Mac (macOS only);
+* thorough mode (``thorough.status()``): whether this machine can run it, what is installed, the
+  setting. Its engine, ``dots``, is optional: not installed is its own state, never ``broken``;
 * the pack index, the English base pack (``store.base()``: version, RECORD, every hash) and every
   installed pack, verified (``store.verify()``);
 * the cache folder, and the saved passwords file: where it is, whether it exists, and whether a
@@ -91,6 +93,18 @@ def _os_name() -> str:
     return sys.platform
 
 
+_THOROUGH_ENGINE = "dots"
+
+
+def _thorough() -> dict[str, Any]:
+    from . import thorough
+
+    try:
+        return thorough.status()
+    except Exception as exc:                           # noqa: BLE001 - doctor reports, never crashes
+        return {"available": False, "code": type(exc).__name__, "message": "thorough mode's state couldn't be read"}
+
+
 def _engines(platform_key: str) -> dict[str, Any]:
     from .ocr import engines
 
@@ -113,6 +127,9 @@ def _engines(platform_key: str) -> dict[str, Any]:
             continue
         if not on_platform:
             out[name] = {"available": False, "state": "not_on_platform", "version": version}
+        elif not version and name == _THOROUGH_ENGINE:
+            out[name] = {"available": False, "state": "not_installed", "version": None,
+                         "message": "thorough mode's reader, an optional extra; see 'pdfintake thorough status'"}
         elif not version:
             out[name] = {"available": False, "state": "broken", "version": None,
                          "message": f"{name} isn't installed or can't be loaded here"}
@@ -220,6 +237,7 @@ def _report(*, canary: bool, check_network: bool) -> dict[str, Any]:
         problems.append(f"pdfintake doesn't run on {plat.key}: {plat.notes or platforms.UNLISTED_NOTE}.")
     rep["engines"] = _engines(plat.key)
     rep["vision"] = _vision()
+    rep["thorough"] = _thorough()
 
     try:
         index_mod.load()

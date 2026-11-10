@@ -9,7 +9,9 @@ pdfintake and its Claude plugin collect no data.
   - `release-assets.githubusercontent.com`: where GitHub serves those release files from.
   - `pypi.org` and `files.pythonhosted.org`: the Python libraries pdfintake needs, installed by uv.
 
-  GitHub and the Python Package Index see what any download shows them: your IP address and the file you asked for. Their own privacy policies cover that ([GitHub](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement), [PyPI](https://policies.python.org/pypi.org/Privacy-Notice/)).
+  - `huggingface.co` and its download hosts under `hf.co`, only if you turn on thorough mode (`pdfintake thorough enable`, Apple silicon only): its model is downloaded from there once, and every file is checked against its pinned SHA-256. After that the mode runs offline.
+
+  GitHub, Hugging Face and the Python Package Index see what any download shows them: your IP address and the file you asked for. Their own privacy policies cover that ([GitHub](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement), [Hugging Face](https://huggingface.co/privacy), [PyPI](https://policies.python.org/pypi.org/Privacy-Notice/)).
 - **A language pack is downloaded only when a document needs it**, without asking, so a batch never stops. `--fetch never` keeps pdfintake fully offline once it's installed. The request names only the pack, never anything about your document.
 - **What pdfintake keeps on your computer.** In its cache folder (`pdfintake doctor` prints where):
   - a **record** of each run, in `records/`. It holds the input and output **file paths**, their sizes and SHA-256 fingerprints, page counts, the languages and readers used, scores, warnings, the options the run used, and any offer you later acted on. **It never holds document text or a password**: OCR results are reduced to counts before the record is saved.
@@ -19,6 +21,7 @@ pdfintake and its Claude plugin collect no data.
     - the two orientation checks' results: the turns they weighed, their scores and the name of the writing system they saw, never any text;
     - for a PDF built from images, the date it was first built, and nothing else.
   - a staged smaller copy in `staging/`.
+  - thorough mode's model in `thorough/`, if you turned the mode on.
   - downloaded language packs in `packs/`, with `tessdata/` (the pack files Tesseract reads) and `canary/` (each pack's self-check results, from the pack's own test image, never from your documents).
 
   The cache in `work/` and the staged copies in `staging/` are deleted 14 days after they were last written, the next time `pdfintake run` starts. If a run is killed before it can clean up, the next run removes the working files it left (on Windows, the 14-day clean-up does).
@@ -26,6 +29,7 @@ pdfintake and its Claude plugin collect no data.
   **A password-protected or edit-locked file is never cached.** Its pictures, reads and votes would come from its unlocked pages, so all of its working files, the unlocked copy included, are deleted as soon as its run ends.
 
   Delete the cache folder to remove all of it.
+- **Thorough mode's setting** is `thorough.json` in pdfintake's config folder: on, off, or that you declined it. Nothing else.
 - **Passwords.** pdfintake never asks for a password. It tries the ones you saved, one per line in a private file: `passwords` in pdfintake's config folder, or the file you name with `--passwords-file`. It won't read that file unless only you can read and change it (mode 0600 on macOS and Linux; inside your user folder on Windows). A password never goes on the command line or into the environment, and pdfintake never puts one in a record, a log or an error message, or says which one opened a file. A file none of them opens is skipped and left exactly as it is.
   - **Saving a password** (`pdfintake passwords add --from-file FILE`) appends it to the saved file, creating that file as private if it isn't there yet. That file is the only place pdfintake ever writes a password. It doesn't delete the file you added from: that's yours, or Claude's, to remove.
   - **The searchable copy has no password**, so Spotlight and other search tools can read it, and so can anyone who has the file. The original is never changed and keeps its protection.

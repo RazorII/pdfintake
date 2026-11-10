@@ -9,6 +9,7 @@
 # core pins them by SHA-256. So before anything is tagged this script refuses unless:
 #   - the repo-level tests pass with nothing skipped (missing docs or index fail, not skip);
 #   - the Apple Vision tests pass on this Mac with nothing skipped (scripts/vision-local.sh);
+#   - thorough mode's real-model tests pass on this Mac with nothing skipped (scripts/thorough-local.sh);
 #   - GitHub's immutable releases are on for the repo, so a published asset and its tag can
 #     never change, even for someone holding the account;
 #   - the pack-publish environment exists with RazorII as a required reviewer (GitHub creates a
@@ -306,6 +307,10 @@ helper no-skips "$work/repo.xml" "$rc"
 
 # Gate 2: Apple Vision on this Mac, nothing skipped.
 PYTHON="$py" scripts/vision-local.sh
+
+# Gate 2b: thorough mode's real model on this Mac, nothing skipped (PDFINTAKE_THOROUGH_CACHE or
+# PDFINTAKE_CACHE names a cache that holds it).
+PYTHON="$py" scripts/thorough-local.sh
 
 # Gate 3: immutable releases on. The endpoint answers 404 while they're off; any other gh failure
 # is reported as itself.

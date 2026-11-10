@@ -28,6 +28,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import json
+import os
 import re
 import subprocess
 import sys
@@ -154,13 +155,19 @@ def _real_member(name: str, folder: Path, monkeypatch: pytest.MonkeyPatch) -> Me
     if case is None and name in PINNED_CASES:
         case = PINNED_CASES[name](engine, monkeypatch)      # skips, naming the files, when they're absent
     if case is None:
+        if THOROUGH and name in engines.NOT_FOR_PACKS:
+            pytest.fail(f"{name} offers no contract case: install thorough mode's model where PDFINTAKE_CACHE points")
         pytest.skip(f"{name} offers no contract case on this machine")
     key = case.platform_key or _current_platform_key()
     params = engine.PARAMS.validate(case.params, _context(name, case))
     return Member(name, engine, case, key, params, folder)
 
 
-@pytest.fixture(params=[*engines.names(), "fake"])
+THOROUGH = os.environ.get("PDFINTAKE_REQUIRE_THOROUGH") == "1"     # scripts/thorough-local.sh
+
+
+@pytest.fixture(params=[pytest.param(n, marks=pytest.mark.thorough) if n in engines.NOT_FOR_PACKS else n
+                        for n in engines.names()] + ["fake"])
 def member(request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Member:
     if request.param == "fake":
         return _fake_member(tmp_path)
@@ -344,7 +351,7 @@ def test_unavailable_is_never_failed(member: Member):
 
 
 def test_registry_names_in_order():
-    assert engines.names() == ("tesseract", "vision", "rapidocr")
+    assert engines.names() == ("tesseract", "vision", "rapidocr", "dots")
     for name, target in engines._REGISTRY.items():
         assert re.fullmatch(NAME_PATTERN, name), name
         module, _, attr = target.partition(":")
@@ -376,7 +383,7 @@ def test_registry_is_lazy():
     code = (
         "import json, sys; sys.path.insert(0, sys.argv[1]); import pdfintake.ocr.engines as e; "
         "print(json.dumps(sorted(m for m in sys.modules if m.startswith('pdfintake.ocr.engines.') "
-        "or m.split('.')[0] in ('tesserocr', 'onnxruntime', 'rapidocr', 'Vision', 'cv2'))))"
+        "or m.split('.')[0] in ('tesserocr', 'onnxruntime', 'rapidocr', 'Vision', 'cv2', 'mlx', 'tokenizers'))))"
     )
     out = subprocess.run([sys.executable, "-I", "-B", "-c", code, str(SRC)], capture_output=True, text=True,
                          encoding="utf-8", timeout=120)

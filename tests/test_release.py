@@ -569,6 +569,8 @@ class FakeRelease:
         shutil.copy(SCRIPTS / "dev-install.sh", self.root / "scripts/dev-install.sh")   # the real rebuild
         shutil.copy(CANARY_ENV, self.root / "tools/canary-env.txt")
         _shell(self.root / "scripts/vision-local.sh", 'echo "vision-local" >> "$FAKE_LOG"\nexit "${FAKE_VISION_RC:-0}"\n')
+        _shell(self.root / "scripts/thorough-local.sh",
+               'echo "thorough-local" >> "$FAKE_LOG"\nexit "${FAKE_THOROUGH_RC:-0}"\n')
         for name in ("test_release", "test_docs", "test_plugin_folder", "test_platform_table"):
             (self.root / "tests" / f"{name}.py").write_text("def test_ok():\n    pass\n", encoding="utf-8")
         canary = {"file": "canary-x.png", "bytes": 10, "sha256": "ab" * 32, "dpi": 300, "must_find": ["x"]}
@@ -670,7 +672,7 @@ def test_release_happy_path_publishes_an_immutable_release_with_every_pinned_dig
     proc = rel.run()
     assert proc.returncode == 0, proc.stderr
     assert "v0.2.0 is published as an immutable release" in proc.stdout
-    order = [rel.index_of(p) for p in ("vision-local", "gh api repos/RazorII/pdfintake/immutable-releases",
+    order = [rel.index_of(p) for p in ("vision-local", "thorough-local", "gh api repos/RazorII/pdfintake/immutable-releases",
                                        "gh api repos/RazorII/pdfintake/environments/pack-publish",
                                        "datawheel build packs/en", "scanner check", "git tag -a v0.2.0",
                                        "git push --atomic", "gh release create v0.2.0", "gh workflow run pack-publish.yml",
@@ -1200,6 +1202,77 @@ def test_vision_gate_runs_only_on_an_apple_silicon_mac(tmp_path: Path, system: s
     assert proc.returncode != 0 and "Apple-silicon Mac" in proc.stderr
 
 
+# --- thorough-local.sh: the same gate for thorough mode's real-model tests
+
+def _thorough_repo(tmp: Path, test_body: str) -> tuple[Path, dict[str, str]]:
+    root, env = _vision_repo(tmp, test_body)
+    (root / "scripts/vision-local.sh").unlink()
+    shutil.copy(SCRIPTS / "thorough-local.sh", root / "scripts/thorough-local.sh")
+    (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\nmarkers = ["thorough: needs the model"]\n',
+                                         encoding="utf-8")
+    env.pop("PDFINTAKE_REQUIRE_THOROUGH", None)
+    env.pop("PDFINTAKE_THOROUGH_CACHE", None)
+    env["PDFINTAKE_CACHE"] = str(tmp / "cache")
+    return root, env
+
+
+def _thorough(root: Path, env: dict[str, str], **extra: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run([_bash(), str(root / "scripts/thorough-local.sh")], cwd=root.parent, env=dict(env, **extra),
+                          capture_output=True, text=True, timeout=300)
+
+
+THOROUGH_PASSING = '''
+@pytest.mark.thorough
+def test_reads():
+    assert os.environ["PDFINTAKE_REQUIRE_THOROUGH"] == "1"
+    assert os.environ["PDFINTAKE_CACHE"].endswith("model-cache")
+
+def test_not_thorough():
+    assert False, "deselected by -m thorough"
+'''
+
+
+@posix
+def test_thorough_gate_passes_when_every_thorough_test_ran(tmp_path: Path):
+    root, env = _thorough_repo(tmp_path, THOROUGH_PASSING)
+    proc = _thorough(root, env, PDFINTAKE_THOROUGH_CACHE=str(tmp_path / "model-cache"))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "1 thorough tests ran, none skipped" in proc.stdout
+
+
+THOROUGH_SKIPPING = '''
+@pytest.mark.thorough
+def test_a():
+    pass
+
+@pytest.mark.thorough
+def test_b():
+    pytest.skip('no model')
+'''
+
+
+@posix
+@pytest.mark.parametrize("body,why", [
+    (THOROUGH_SKIPPING, "1 skipped"),
+    ("@pytest.mark.thorough\ndef test_a():\n    assert False\n", "1 failed"),
+    ("def test_a():\n    pass\n", "no thorough test was collected"),
+])
+def test_thorough_gate_refuses_a_skip_a_failure_or_nothing(tmp_path: Path, body: str, why: str):
+    root, env = _thorough_repo(tmp_path, body)
+    proc = _thorough(root, env)
+    assert proc.returncode != 0 and why in proc.stderr, proc.stdout + proc.stderr
+
+
+@posix
+def test_thorough_gate_needs_a_cache_and_an_apple_silicon_mac(tmp_path: Path):
+    root, env = _thorough_repo(tmp_path, THOROUGH_PASSING)
+    env.pop("PDFINTAKE_CACHE")
+    proc = _thorough(root, env)
+    assert proc.returncode != 0 and "PDFINTAKE_CACHE" in proc.stderr
+    proc = _thorough(root, env, PDFINTAKE_CACHE=str(tmp_path / "c"), FAKE_UNAME_S="Linux", FAKE_UNAME_M="x86_64")
+    assert proc.returncode != 0 and "Apple-silicon Mac" in proc.stderr
+
+
 # --- dev-install.sh
 
 FAKE_UV = r'''
@@ -1250,7 +1323,7 @@ class FakeInstall:
         shutil.copy(SCRIPTS / "dev-install.sh", self.root / "scripts/dev-install.sh")
         (self.root / "src/pdfintake/datawheel.py").write_text(FAKE_DATAWHEEL, encoding="utf-8")
         self.manifests = {"en": {"id": "en", "version": "1.0.0", "base": True}, "th": {"id": "th", "version": "1.0.0"},
-                          "hu": {"id": "hu", "version": "1.2.0"}}
+                          "fr": {"id": "fr", "version": "1.2.0"}}
         for pid, m in self.manifests.items():
             (self.root / "packs" / pid).mkdir(parents=True)
             (self.root / "packs" / pid / "manifest.json").write_text(json.dumps(m), encoding="utf-8")
@@ -1325,7 +1398,7 @@ def test_dev_install_tool_mode_is_a_non_editable_uv_tool_install(inst: FakeInsta
 def test_dev_install_builds_every_pack_on_request(inst: FakeInstall):
     assert inst.run("--packs", "all").returncode == 0
     assert [c for c in inst.calls() if c.startswith("datawheel")] == [
-        "datawheel build packs/en", "datawheel build packs/hu", "datawheel build packs/th"]
+        "datawheel build packs/en", "datawheel build packs/fr", "datawheel build packs/th"]
     inst.log.unlink()
     assert inst.run("--packs", "th").returncode == 0
     assert not any(c.startswith("datawheel") for c in inst.calls())

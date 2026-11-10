@@ -592,6 +592,10 @@ class _Semantic:
             return self._engines[name]
         from ..ocr import engines
         member: Any = None
+        if name in engines.NOT_FOR_PACKS:
+            self.add(path, f"engine {name!r} is thorough mode's own reader and can't be named in a pack")
+            self._engines[name] = None
+            return None
         try:
             member = engines.get(name)
         except PackError as exc:

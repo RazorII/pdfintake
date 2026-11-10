@@ -20,7 +20,7 @@ Every `pdfintake run` and `pdfintake apply` writes one **record** per output doc
    pdfintake apply <record id> <offer.apply_flag> <option id> --json
    ```
 
-   The record id matches `^r-[0-9]{8}-[0-9a-f]{8}$`, the apply flag is `--choice` or `--lang`, and the option id matches `^(smaller|none|[a-z]{2,3})$`. No file name or other text from a record ever goes into the command. `apply` accepts a record id and nothing else: a path, `../x` or an id with a trailing newline is refused with exit 2.
+   The record id matches `^r-[0-9]{8}-[0-9a-f]{8}$`, the apply flag is `--choice` or `--lang`, and the option id matches `^(smaller|thorough|none|[a-z]{2,3})$`. No file name or other text from a record ever goes into the command. `apply` accepts a record id and nothing else: a path, `../x` or an id with a trailing newline is refused with exit 2.
 4. **Nothing waits.** A record's exit says how the run went, never that something is waiting: a run that wrote every file, or skipped one that no saved password opened, exits 0 whatever offers it carries.
 5. **A record never holds a password.** No field can take one:
    - `options` leaves out every run option whose name contains `password` (the saved passwords file's path included); a re-run reads the saved passwords again itself;
@@ -39,19 +39,19 @@ A record has exactly these top-level fields, in this order. A field with nothing
 | `record_version` | int | 1 |
 | `id` | str | `r-YYYYMMDD-<8 hex>`; the date is the UTC day the record was made |
 | `parent` | str or null | the record whose offer this `apply` acted on |
-| `tool` | object | `version`, `platform` (a key such as `darwin-arm64`), `os`, `python`, `engines` (name → version string, or `"unavailable: <reason>"`) |
+| `tool` | object | `version`, `platform` (a key such as `darwin-arm64`), `os`, `python`, `engines` (every registered engine's name → version string, or `"unavailable: <reason>"`; `dots` is thorough mode's reader, listed whether or not the mode ran) |
 | `created` | str | UTC ISO 8601, for example `2026-11-05T09:30:00Z` |
 | `status` | enum | `done`, `refused`, `failed`, `plan`, `resolved` (an offer on this record was acted on with `apply`; `history[]` says what was done) |
 | `exit` | int | this record's exit code (below) |
 | `provenance` | enum or null | `ordinary`, `counterparty`, `evidence`: from `--provenance`, which comes from the user's own words, otherwise `ordinary`. It is never asked. Null only when the run stopped before it read its options |
-| `options` | object | the run options the run used, with `out` and `outdir` as strings or null (`apply` re-runs from these, to the same place) |
+| `options` | object | the run options the run used, with `out` and `outdir` as strings or null (`apply` re-runs from these, to the same place). `thorough` is `true` for `--thorough`, `false` for `--no-thorough` and `null` when the saved setting decided; the `ocr` step's `detail.thorough` says whether the mode actually read the document |
 | `input` | object | `paths[]`, `kind`, `pages`, `seal` (`sha256[]`, `sizes[]`, `mtimes_ns[]`, one entry per path; null before the inputs are sealed) |
 | `output` | object or null | `path`, `sha256`, `bytes` and `kind`, always: `searchable` for an ordinary output, `searchable_copy` for a copy beside an original pdfintake doesn't change (below); null when nothing was written: nothing was worth writing, the file was refused, or no saved password opened it |
 | `refusal` | object or null | `code` (a hard refusal code, below), `message`, `detectors` (`walk`, `raw`), `repaired` |
 | `steps[]` | array | one row per step: `step`, `status` (`ok`, `skipped`, `changed`, `clear`, `failed`), `detail` |
 | `verify[]` | array | each check: `name`, `ok`, `detail`, `page` |
 | `language` | object | `plan` (`confident`, `uncertain`, `hinted`, `forced`, `not_needed`), `packs[]`, `canaries[]`, `detection`. `uncertain` means detection wasn't sure, so the likeliest language read the page (warning `language_uncertain`, and a `language` offer) |
-| `pages[]` | array | per OCR'd page: `page`, `class`, `dpi`, `orientation`, `script`, `languages`, `pack`, `composition`, `readers[]`, `pick` (no lines), `fills` (counts by kind), `repairs`, `must_survive`, `retention`, `warnings[]` (codes) |
+| `pages[]` | array | per OCR'd page: `page`, `class`, `dpi`, `orientation`, `script`, `languages`, `pack`, `composition`, `readers[]`, `pick` (no lines), `fills` (counts by kind), `repairs`, `must_survive`, `retention`, `warnings[]` (codes). In thorough mode `readers[]` includes `dots` (its seconds and status) and the fills it added count under their kind |
 | `shrink` | object | the lossless shrink's report |
 | `metadata` | object | what happened to the metadata: `kept`, `changed`, `dropped` (names below) |
 | `smaller` | object or null | the smaller copy's measurements: `offered`, `candidate`, `saving`, `metric`, `bar`, `min_score`, `pages[]`, `kept_lossless[]`, `text_layer_identical`, `metadata`, `applied`, `written` |
@@ -107,6 +107,7 @@ A fresh record says `failed` with exit 1 until the run records its outcome, so a
 |---|---|---|---|
 | `language` | `--lang` | another pack's language code | pdfintake chose a language for some pages without asking, and another pack could read them again. Four cases: detection wasn't sure, so the likeliest language read them (warning `language_uncertain`); the language or writing system detection found has no pack yet, so English read them (`no_pack_for_language`); the pack they need isn't installed and the run didn't download anything, so English read them (`pack_not_installed`); or that pack's download or check failed this run, so English read them (`pack_broken`). The summary says which. Each option reads those pages again with that pack; one that isn't installed downloads it once. |
 | `smaller` | `--choice` | `smaller` | a smaller copy would save at least 30% (no byte floor) with every changed page scoring at or above the bar. Only the lossless file was written. `smaller` saves `<output stem> (smaller).pdf` next to it. The staged candidate is kept for 14 days; after that `apply` rebuilds it. Never offered for a searchable copy, and not offered when `run --smaller` already wrote the copy. |
+| `thorough` | `--choice` | `thorough` | this Mac (Apple silicon) can read in thorough mode, and the person hasn't chosen yet. The summary says what the mode needs (the `pdfintake[thorough]` libraries and a one-time 4.4 GB download from Hugging Face), what it costs (about 17 s more a page) and what it gives (numbers and lines in other scripts the regular readers miss, and on Thai pages a read the other readers back up; now and then a wrong extra word or number in the invisible text). `thorough` reads the document again with dots.mocr beside the regular readers, once the mode is set up with `pdfintake thorough enable` (exit 3 naming the setup otherwise). Not offered once the mode is on, off or turned down, nor off Apple silicon. |
 
 An offer reads, for example:
 
@@ -138,7 +139,7 @@ pdfintake never asks for a password. It tries the passwords the user saved once 
 | 0 | done; read the warnings and the offers. A file skipped because no saved password opened it is exit 0 too (`skipped_no_password`) |
 | 1 | failed (the record says why) |
 | 2 | usage: bad arguments, an input that is missing (`input_missing`), isn't a regular file (`input_not_file`: a folder, a pipe or a device) or isn't a PDF or an image pdfintake reads (`unsupported_input`), each in that input's own record; an unknown record id, a flag that doesn't fit the offer, `--overwrite` with a searchable copy (`copy_never_overwrites`), an output that is open in another program on Windows (`output_in_use`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`) |
-| 3 | setup: base pack missing or broken, unsupported platform, broken model install |
+| 3 | setup: base pack missing or broken, unsupported platform, broken model install; for `apply --choice thorough`, thorough mode not set up here yet (`thorough_not_ready`, the message names `pdfintake thorough enable`) |
 | 4 | refused; nothing written. For `run`: a hard refusal code (below); signed, certified, PDF/A, encrypted, counterparty and evidence files get a searchable copy instead, exit 0. For `apply --choice smaller`: the original, read again, has a hard code, or it is kept as a searchable copy, which never gets a smaller version (`no_smaller_for_a_copy`) |
 | 5 | stale: an input, output or candidate changed since the record; run again |
 
@@ -165,7 +166,7 @@ A warning is something the user should hear about. Show every one, always; a deg
 
 | Group | Codes |
 |---|---|
-| readers | `reader_failed`, `reader_timeout`, `fallback_used`, `agreement_low`, `no_layer_readers_failed`, `vision_language_unsupported` |
+| readers | `reader_failed`, `reader_timeout`, `fallback_used`, `agreement_low`, `no_layer_readers_failed`, `vision_language_unsupported`, `thorough_failed`, `thorough_unavailable` |
 | language | `mixed_language_page`, `mixed_script_page`, `mixed_script_no_pack`, `pack_broken`, `language_uncertain`, `no_pack_for_language`, `pack_not_installed` |
 | pages | `existing_layer_replaced`, `layer_shrank`, `existing_layer_kept`, `image_text_not_read`, `garbled_text`, `clip_text_kept` |
 | layer | `layer_dropped_chars` |

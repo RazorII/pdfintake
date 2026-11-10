@@ -1,6 +1,6 @@
 # Third-party software and data
 
-pdfintake's own code is MIT licensed. Nothing below is copied into this repository: the libraries are installed from PyPI when you install pdfintake, and the models and fonts come in data wheels built from their pinned upstream files. Licence ids are SPDX identifiers, read from each package's metadata.
+pdfintake's own code is MIT licensed. Nothing below is copied into this repository except the code listed under *Code ported from elsewhere*: the libraries are installed from PyPI when you install pdfintake, the models and fonts come in data wheels built from their pinned upstream files, and thorough mode's model is downloaded from Hugging Face when you turn the mode on. Licence ids are SPDX identifiers, read from each package's metadata.
 
 ## Runtime dependencies
 
@@ -86,6 +86,22 @@ Each pack's `corpus.json` names the Wikipedia article revisions (CC-BY-SA-4.0) a
   - `lib/jxl/base/matrix_ops.h`: `Inv3x3Matrix`
 
   It also refuses images under 8 × 8 px, as `tools/ssimulacra2_main.cc` does; no code is taken from that file.
+
+- `src/pdfintake/ocr/engines/dotsmlx/` runs dots.mocr for thorough mode on plain `mlx`. Its model code is ported from [mlx-vlm](https://github.com/Blaizzy/mlx-vlm) 0.7.4, MIT, Copyright (c) 2025 Prince Canuma; the package's `__init__.py` carries mlx-vlm's licence text, and each module's header names the files it ports. `preprocess.py` ports the Qwen2-VL image processor's resize and patching from [transformers](https://github.com/huggingface/transformers) 5.18, Apache-2.0, Copyright 2024 The Qwen team, Alibaba Group and the HuggingFace Inc. team, and carries that licence's header. The model's architecture, its chat template and the layout prompt in `ocr/engines/dots.py` are [dots.ocr](https://github.com/rednote-hilab/dots.ocr)'s, MIT, Copyright (c) 2025 rednote-hilab.
+
+## Thorough mode
+
+Installed only with `pdfintake[thorough]`, and only on a Mac with Apple silicon:
+
+| Package | Licence | What pdfintake uses it for |
+|---|---|---|
+| `mlx` | MIT | runs dots.mocr on the Mac's GPU |
+| `mlx-metal` | MIT | mlx's Metal backend (pulled in by mlx) |
+| `tokenizers` | Apache-2.0 | dots.mocr's tokenizer, read from the model folder's `tokenizer.json` |
+
+`tokenizers` pulls in `huggingface-hub` (Apache-2.0) and with it `hf-xet` (Apache-2.0), `httpx` (BSD-3-Clause), `httpcore` (BSD-3-Clause), `h11` (MIT), `anyio` (MIT), `click` (BSD-3-Clause), `filelock` (MIT), `fsspec` (BSD-3-Clause) and `typing-extensions` (PSF-2.0). pdfintake never calls `huggingface-hub`: it downloads the model itself (`pdfintake thorough enable`).
+
+The model is [dots.mocr](https://huggingface.co/rednote-hilab/dots.mocr) by rednote-hilab, MIT, as the 8-bit MLX conversion [mlx-community/dots.mocr-8bit](https://huggingface.co/mlx-community/dots.mocr-8bit) (MIT), pinned at revision `6d9e750ba44cf99e3c608cfdf47e59df209dce13` with every file's SHA-256 in `src/pdfintake/thorough.py`. It isn't in this repository or in any wheel: its 4.4 GB are over GitHub's limit for a release file. The model card comes down with it, for its licence line.
 
 ## Test and kit extras
 

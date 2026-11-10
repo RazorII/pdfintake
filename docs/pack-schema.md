@@ -145,6 +145,8 @@ The authoritative tables are each member's `PARAMS` in the code (`ParamTable.des
 | `use_cls` | bool | no | `False` |  |
 | `min_score` | float | no | `0.5` | ≥ 0.0; ≤ 1.0 |
 
+**`dots`**. Model kinds: none. Platforms: darwin-arm64. Thorough mode's reader (dots.mocr), which a pack can't name: thorough mode adds it to every OCR page itself, with its own pinned model, when the user turns the mode on. No parameters.
+
 ### Pick rules
 
 **`corroborated_trigrams` v`1`**.

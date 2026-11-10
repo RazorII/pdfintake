@@ -7,9 +7,9 @@ description: "Turn any PDF or image (scans, phone photos, Preview imports, downl
 
 pdfintake turns images into an upright PDF without touching their pixels, adds an invisible OCR text layer to pages that are only pictures of text, and shrinks the result losslessly. It never changes the input file. It writes a JSON record for every document, and every word you show the user about a document comes from that record.
 
-**Nothing is asked, before or during a run.** People hand pdfintake big piles of PDFs and want them done in the background. So don't ask questions, don't offer a menu of choices, and don't stop to check "should I…". Read the request, turn the user's own words into flags, run the whole batch, and give **one summary at the end** (section 5). Anything the user might still want (another language for a page, smaller copies, a password for skipped files) goes into that summary as a one-line offer, never as a question that holds anything up.
+**Nothing is asked, before or during a run.** People hand pdfintake big piles of PDFs and want them done in the background. So don't ask questions, don't offer a menu of choices, and don't stop to check "should I…". Read the request, turn the user's own words into flags, run the whole batch, and give **one summary at the end** (section 5). Anything the user might still want (another language for a page, smaller copies, a password for skipped files) goes into that summary as a one-line offer, never as a question that holds anything up. Thorough mode on a Mac with Apple silicon is one of those offers too (section 5).
 
-This skill needs **pdfintake 0.1.0 or newer**. It works wherever you can run shell commands: Claude Code on macOS, Windows or Linux, and claude.ai's own sandbox.
+This skill needs **pdfintake 0.2.0 or newer**. It works wherever you can run shell commands: Claude Code on macOS, Windows or Linux, and claude.ai's own sandbox.
 
 ## 1. Find pdfintake, or install it
 
@@ -18,15 +18,15 @@ uv puts the command in `~/.local/bin`, which often isn't on the shell's PATH. So
 1. `pdfintake --version`
 2. If that's not found: `~/.local/bin/pdfintake --version` (on Windows, `%USERPROFILE%\.local\bin\pdfintake.exe --version`), or `"$(uv tool dir --bin)/pdfintake" --version` when uv is installed.
 
-Use whichever works for everything below. If it reports a version older than 0.1.0, reinstall this release over it: `uv tool install --force git+https://github.com/RazorII/pdfintake@v0.1.0`. A plain `uv tool upgrade` keeps the old pin, so it won't move it.
+Use whichever works for everything below. If it reports a version older than 0.2.0, reinstall this release over it: `uv tool install --force git+https://github.com/RazorII/pdfintake@v0.2.0`. A plain `uv tool upgrade` keeps the old pin, so it won't move it.
 
 Only if none of them works, install this release:
 
 ```
-uv tool install git+https://github.com/RazorII/pdfintake@v0.1.0
+uv tool install git+https://github.com/RazorII/pdfintake@v0.2.0
 ```
 
-Use uv. pipx or pip work only with an explicit Python 3.11 to 3.14 interpreter (`pipx install --python python3.12 git+https://github.com/RazorII/pdfintake@v0.1.0`). In claude.ai, always use uv: its Python refuses pip with "externally-managed-environment".
+Use uv. pipx or pip work only with an explicit Python 3.11 to 3.14 interpreter (`pipx install --python python3.12 git+https://github.com/RazorII/pdfintake@v0.2.0`). In claude.ai, always use uv: its Python refuses pip with "externally-managed-environment".
 
 Then run `pdfintake doctor --json` once per environment. Exit 3 means something it needs is missing or broken; the JSON names it. Tell the user plainly. If a download failed, say that an organisation's network setting may block package downloads (from github.com or files.pythonhosted.org), and that nothing can be converted until it's allowed.
 
@@ -44,6 +44,7 @@ Every flag comes from what the user said. When they didn't say, leave it out: th
 - **`--outdir 'DIR'`.** When the user names a folder. In a sandbox (claude.ai, Cowork in the cloud), pass the folder the environment hands to the user; claude.ai downloads are limited to 30 MB per file, so mention the size when a file is bigger. Without it, each new file goes next to its original.
 - **`--fetch never`.** When the user says to stay offline or download nothing. Pages whose pack isn't installed are then read with English, with a warning.
 - **`--overwrite`.** Only when the user said to replace files pdfintake made before. Never for a searchable copy, which never replaces anything.
+- **`--thorough` / `--no-thorough`.** Only when the user asks for it for this batch ("read these as carefully as you can" → `--thorough`; "quickly, skip the slow reader" → `--no-thorough`). Otherwise leave it out: the user's saved choice (section 5) decides.
 
 How to pass the files:
 
@@ -113,6 +114,10 @@ Short, plain and in this order. Leave out any part with nothing in it.
 2. **Files skipped for a password**, all in one line: "These 3 files need a password I don't have: … Give me the password once and I'll save it, then run them again."
 3. **Language**, one line per file: pages read with an uncertain language (`language_uncertain`), or in a language with no pack yet (`no_pack_for_language`, `pack_not_installed`, `pack_broken`). Use the offer's `summary` from the record. When a language has no pack, say once that anyone can add one (the repository's `docs/add-a-language.md`).
 4. **Smaller copies**, in one line, when records carry a `smaller` offer: "12 files could be made about 60% smaller (180 MB to 70 MB in all); ask if you want smaller copies."
+5. **Thorough mode**, when a record carries a `thorough` offer (a Mac with Apple silicon where the user hasn't decided yet), once per conversation: give the offer's `summary` in its own words (what the mode needs, what it costs, what it gives), and say that you can set it up, or that a "no thanks" stops the offer for good. Nothing waits on it. Then, only on the user's word:
+   - **Yes:** install the libraries with `uv tool install --reinstall 'pdfintake[thorough] @ git+https://github.com/RazorII/pdfintake@v0.2.0'`, then run `pdfintake thorough enable --json`. It downloads 4.4 GB and reads a test page, so it can take several minutes; say so, and run it in the background if you can. Exit 3 means it couldn't (the JSON's `error.message` says why: no room, a blocked download, a failed test read); report that and stop. When it worked, say in one line that this batch can be read again in thorough mode.
+   - **No:** run `pdfintake thorough decline --json`, and don't bring it up again. The user can still turn it on later with `pdfintake thorough enable`.
+   - **Nothing said** (they moved on): leave it; later batches' records keep offering it.
 
 Then list, per file, what went wrong or reads less well: failed, refused and stale files with the reason, and **every warning**, in plain words (a reader that failed or was left out is never hidden). The other notes go in one closing line; `copy_unlocked`, `signature_not_carried` and `skipped_no_password` already have their places above. When a record's `output` is null, say nothing was written and why (the note says).
 
@@ -122,6 +127,7 @@ Each offer in a record has a `kind`, a `summary`, `options` and an `apply_flag`.
 
 - "Yes, make the smaller copies" → `pdfintake apply <record id> --choice smaller --json` for each record with a `smaller` offer.
 - "Read page 2 as Spanish" → `pdfintake apply <record id> --lang <option id> --json`, where the option id is one of that offer's `options` (`es` here).
+- "Yes, read them again thoroughly" (after thorough mode is set up) → `pdfintake apply <record id> --choice thorough --json` for each record with a `thorough` offer. Exit 3 with `thorough_not_ready` means the setup isn't done yet (section 5).
 
 Then report the new records the same way, in one short summary.
 
@@ -158,6 +164,7 @@ No smaller copy is made for a searchable copy.
 
 - `language`: some pages could be read again with another language pack. The summary says why.
 - `smaller`: a smaller copy would save at least 30% while its most detailed part still scores 90 or more out of 100, where a difference shows only when you flick between the two. It's kept ready for 14 days and rebuilt after that. Not offered when `--smaller` already wrote the copy.
+- `thorough`: on a Mac with Apple silicon where the user hasn't turned thorough mode on, off or declined it, the document could be read again with dots.mocr beside the regular readers. Section 5 says how to offer it, once per conversation.
 
 ### Warnings
 
@@ -170,6 +177,8 @@ Every warning goes to the user. Explain it in a few plain words; the record's `m
 - `agreement_low`: the readers agreed less than usual, so some words in the text layer may be wrong.
 - `no_layer_readers_failed`: every reader failed, so this page has no text layer and isn't searchable.
 - `vision_language_unsupported`: Apple Vision can't read this language on this Mac, so the other readers read it alone.
+- `thorough_failed`: thorough mode's dots.mocr read failed on this page, so the regular readers read it alone.
+- `thorough_unavailable`: thorough mode was asked for but can't run here (not Apple silicon, or not set up), so the regular readers read every page alone.
 
 **Language:**
 - `language_uncertain`: pdfintake wasn't sure of the page's language, so it read it as the likeliest one. It can read it again as another if the user asks.
@@ -244,7 +253,7 @@ The code is in the failed step of that file's record, or in `error.code` when th
 
 ## Don't
 
-- Don't ask anything before or during a batch: no question tool, no option lists, no "should I…". Decide from the user's words and the defaults, and put what's left in the summary.
+- Don't ask anything before or during a batch: no question tool, no option lists, no "should I…". Decide from the user's words and the defaults, and put what's left in the summary, thorough mode included (section 5).
 - Don't pass `--overwrite` unless the user said to replace files.
 - Don't run Ghostscript, `ocrmypdf` or any other OCR or PDF tool in pdfintake's place, or to get around a refusal or a failed check.
 - Don't edit the input file.

@@ -5,9 +5,11 @@ Commands (DESIGN §4.1 as changed by §10-§12)::
     pdfintake run INPUT... [--paths-from FILE] [--provenance ordinary|counterparty|evidence]
                   [-o OUT | --outdir DIR] [--lang CODE[,CODE]|none] [--force-lang CODE[,CODE]|none]
                   [--fetch auto|never] [--smaller] [--separate] [--redo-ocr] [--keep-existing-layer]
-                  [--overwrite] [--plan] [--workers N] [--passwords-file FILE] [--json]
-    pdfintake apply RECORD-ID (--choice smaller | --lang CODE) [--passwords-file FILE] [--json]
+                  [--overwrite] [--plan] [--workers N] [--thorough | --no-thorough]
+                  [--passwords-file FILE] [--json]
+    pdfintake apply RECORD-ID (--choice smaller|thorough | --lang CODE) [--passwords-file FILE] [--json]
     pdfintake doctor [--canary] [--check-network] [--json]
+    pdfintake thorough status|enable|disable [--remove]|decline [--json]
     pdfintake packs list|show ID|fetch ID|verify [ID]|remove ID|path [--json]
     pdfintake record show RECORD-ID [--json]
     pdfintake export clean INPUT -o OUT --provenance VALUE [--strip-dates] [--overwrite] [--json]
@@ -153,6 +155,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--overwrite", action="store_true", help="replace an output that already exists")
     p.add_argument("--plan", action="store_true", help="say what would be done and downloaded; write nothing")
     p.add_argument("--workers", type=int, default=None, metavar="N", help="engine reads at once (1-16)")
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--thorough", dest="thorough", action="store_const", const=True, default=None,
+                      help="also read every OCR page with dots.mocr (Apple silicon; see 'pdfintake thorough')")
+    mode.add_argument("--no-thorough", dest="thorough", action="store_const", const=False,
+                      help="don't, even when thorough mode is on")
     p.add_argument("--passwords-file", metavar="FILE",
                    help="the saved passwords to try on a password-protected file (default: the config folder's "
                         "'passwords' file, when it exists)")
@@ -163,10 +170,13 @@ def build_parser() -> argparse.ArgumentParser:
     # apply ----------------------------------------------------------------------------------------
     p = sub.add_parser("apply", help="act on an offer of an earlier run",
                        description="Act on an offer in a record, only when a person asks for it: "
-                                   "--choice smaller writes the smaller copy, --lang CODE reads the pages again.")
+                                   "--choice smaller writes the smaller copy, --choice thorough reads the "
+                                   "document again in thorough mode, --lang CODE reads the pages again.")
     p.add_argument("record_id", metavar="RECORD-ID")
     answer = p.add_mutually_exclusive_group(required=True)
-    answer.add_argument("--choice", choices=("smaller",), help="smaller: write the smaller copy the record offers")
+    answer.add_argument("--choice", choices=("smaller", "thorough"),
+                        help="smaller: write the smaller copy the record offers; thorough: read the document "
+                             "again in thorough mode (set it up first with 'pdfintake thorough enable')")
     answer.add_argument("--lang", metavar="CODE", help="read the pages again with this language")
     p.add_argument("--passwords-file", metavar="FILE", help="the saved passwords, for a password-protected input")
     p.add_argument("--json", action="store_true")
@@ -218,6 +228,22 @@ def build_parser() -> argparse.ArgumentParser:
         q.add_argument("--overwrite", action="store_true", help="replace OUT when it already exists")
         q.add_argument("--json", action="store_true")
         q.set_defaults(func=_cmd_export)
+
+    # thorough -------------------------------------------------------------------------------------
+    p = sub.add_parser("thorough", help="thorough mode: dots.mocr beside the regular readers (Apple silicon)",
+                       description="Thorough mode also reads every OCR page with dots.mocr, a vision-language "
+                                   "OCR model, on a Mac with Apple silicon. It needs the pdfintake[thorough] "
+                                   "libraries and a one-time model download, and is off until enabled.")
+    tsub = p.add_subparsers(dest="thorough_command", required=True, metavar="ACTION", parser_class=_Parser)
+    for name, helptext in (("status", "whether this machine can run it, what is installed, and the setting"),
+                           ("enable", "download and check the model, read a test page, and turn the mode on"),
+                           ("disable", "turn the mode off (the model stays unless --remove)"),
+                           ("decline", "record that you don't want it (enable still works later)")):
+        q = tsub.add_parser(name, help=helptext)
+        if name == "disable":
+            q.add_argument("--remove", action="store_true", help="also delete the downloaded model")
+        q.add_argument("--json", action="store_true")
+        q.set_defaults(func=_cmd_thorough)
 
     # passwords ------------------------------------------------------------------------------------
     p = sub.add_parser("passwords", help="the saved passwords list")
@@ -506,6 +532,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
             plan_only=bool(args.plan),
             workers=args.workers if args.workers is not None else flow.DEFAULT_WORKERS,
             passwords_file=Path(args.passwords_file) if args.passwords_file is not None else None,
+            thorough=args.thorough,
         )
         records = flow.run(inputs, opts)
         return _report_records(args, records)           # inside the try: a bad record is still one JSON object
@@ -624,6 +651,10 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
                 state = "ok" if info.get("available") else (info.get("state") or info.get("reason") or "unavailable")
                 version = f" {info.get('version')}" if info.get("version") else ""
                 _say(f"  engine {name}:{version} {state}")
+    tho = rep.get("thorough") or {}
+    if isinstance(tho, Mapping) and tho.get("available"):
+        state = "on" if tho.get("on") else (tho.get("setting") or "not set up")
+        _say(f"  thorough mode: {state}" + ("" if tho.get("ready") else " (see 'pdfintake thorough status')"))
     base = rep.get("base_pack") or {}
     _say(f"  base pack: {'ok ' + str(base.get('version')) if base.get('ok') else base.get('message', 'missing')}")
     for pack in rep.get("packs") or []:
@@ -783,6 +814,65 @@ def _cmd_export(args: argparse.Namespace) -> int:
         _say(f"export {kind}: {_shown(src.name)} -> {_shown(ref.path)} [{_size(ref.bytes)}]")
         for w in warnings:
             _say(f"  warning {w['code']}: {w['message']}")
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------- thorough
+
+class _Progress:
+    """Download progress on standard error: a small file once it's done, a large one every 5%."""
+
+    def __init__(self) -> None:
+        self.shown: dict[str, int] = {}
+
+    def __call__(self, name: str, done: int, total: int) -> None:
+        pct = 100 * done // max(1, total)
+        if total < 50_000_000 and done < total:
+            return
+        last = self.shown.get(name, -5)
+        if pct >= last + 5 or (done == total and last < 100):
+            self.shown[name] = pct
+            _err(f"downloading {name}: {pct}% of {_size(total)}")
+
+
+def _cmd_thorough(args: argparse.Namespace) -> int:
+    action = args.thorough_command
+    try:
+        from . import integrity, thorough
+        from .ocr import engines
+
+        if action == "status":
+            out = thorough.status()
+        elif action == "enable":
+            engines.warm_up()
+            with integrity.no_subprocess():
+                out = thorough.enable(progress=None if args.json else _Progress())
+        elif action == "disable":
+            out = thorough.disable(remove=bool(args.remove))
+        else:
+            out = thorough.decline()
+    except PdfIntakeError as exc:
+        return _fail(args, exc)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as exc:                             # noqa: BLE001
+        return _unexpected(args, exc)
+    if args.json:
+        _emit({"exit": EXIT_OK, **out})
+        return EXIT_OK
+    if not out.get("available"):
+        _say(f"thorough mode: not available here ({out.get('why_not')})")
+        return EXIT_OK
+    model = out.get("model") or {}
+    libs = out.get("libraries") or {}
+    state = "on" if out.get("on") else (out.get("setting") or "not decided")
+    _say(f"thorough mode: {state}")
+    _say(f"  libraries: {'installed' if not libs.get('missing') else 'missing ' + ', '.join(libs['missing'])}")
+    if libs.get("install"):
+        _say(f"  install them with: {libs['install']}")
+    _say(f"  model {model.get('repo')}: " + ("installed" if model.get("installed")
+                                            else f"not installed ({_size(model.get('download_bytes'))} to download)"))
+    _say(f"  about {out.get('seconds_per_page')} s more a page")
     return EXIT_OK
 
 

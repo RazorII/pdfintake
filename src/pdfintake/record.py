@@ -73,14 +73,15 @@ RECORD_VERSION = 1
 RECORD_ID_RE = re.compile(r"^r-[0-9]{8}-[0-9a-f]{8}$")
 # An option id is "smaller" or a language code; "none" stays valid for an `apply --lang none` in
 # history. The provenance and password answers are gone with their decisions (§12.5, decided 2026-11-05).
-OPTION_ID_RE = re.compile(r"^(smaller|none|[a-z]{2,3})$")
+OPTION_ID_RE = re.compile(r"^(smaller|thorough|none|[a-z]{2,3})$")
 ApplyFlag = Literal["--choice", "--lang"]
 APPLY_FLAGS: tuple[str, ...] = get_args(ApplyFlag)
 
-# §12.5: the blocking decision became offers. Two kinds, each acted on later (or never) with one flag.
-OfferKind = Literal["language", "smaller"]
+# §12.5: the blocking decision became offers, each acted on later (or never) with one flag. §14:
+# "thorough" offers the opt-in dots.mocr mode on Apple silicon, acted on with --choice thorough.
+OfferKind = Literal["language", "smaller", "thorough"]
 OFFER_KINDS: tuple[str, ...] = get_args(OfferKind)
-APPLY_FLAG_FOR: Mapping[str, str] = {"language": "--lang", "smaller": "--choice"}
+APPLY_FLAG_FOR: Mapping[str, str] = {"language": "--lang", "smaller": "--choice", "thorough": "--choice"}
 
 # "decision" is gone: no record waits for an answer (§12.5). "resolved" is a record an offer on
 # which was acted on with apply; its history says what was done.
@@ -104,7 +105,9 @@ EXIT_PRIORITY: tuple[int, ...] = (EXIT_USAGE, EXIT_SETUP, EXIT_FAILED, EXIT_REFU
 
 WARNING_GROUPS: Mapping[str, tuple[str, ...]] = {
     "readers": ("reader_failed", "reader_timeout", "fallback_used", "agreement_low",
-                "no_layer_readers_failed", "vision_language_unsupported"),
+                "no_layer_readers_failed", "vision_language_unsupported",
+                # §14: thorough mode (dots.mocr) failed on a page, or couldn't run at all
+                "thorough_failed", "thorough_unavailable"),
     "language": ("mixed_language_page", "mixed_script_page", "mixed_script_no_pack", "pack_broken",
                  # §12.3: nothing is asked, so what used to be a question is now a warning
                  "language_uncertain", "no_pack_for_language", "pack_not_installed"),
@@ -131,6 +134,8 @@ WARNING_MESSAGES: Mapping[str, str] = {
     "reader_timeout": "One of the readers took too long on this page and was stopped, so its text layer comes from the others.",
     "fallback_used": "The readers couldn't settle this page, so pdfintake used its fallback reader.",
     "agreement_low": "The readers agreed less than usual on this page, so some words may be wrong.",
+    "thorough_failed": "Thorough mode's dots.mocr read failed on this page, so the regular readers read it alone.",
+    "thorough_unavailable": "Thorough mode was asked for but can't run here, so the regular readers read every page alone.",
     "no_layer_readers_failed": "Every reader failed on this page, so it has no text layer.",
     "vision_language_unsupported": "Apple Vision can't read this language on this Mac, so the other readers read it alone.",
     "mixed_language_page": "This page mixes two languages. It was read as the main one, so letters only the other uses may be lost.",
@@ -504,6 +509,16 @@ def smaller_offer(*, output: Path | str, inputs: Sequence[Path | str], before_by
     ])
 
 
+def thorough_offer() -> Offer:
+    """The ``thorough`` offer (§14): this Mac could read the document again in thorough mode (dots.mocr
+    beside the regular readers). Its words come from ``thorough.offer_text``: what the mode requires,
+    what it costs and what it gives, so the skill can put it to the user as it is."""
+    from . import thorough
+
+    summary, label, description = thorough.offer_text()
+    return Offer("thorough", "--choice", summary, [Option("thorough", label, description)])
+
+
 # Why a language offer exists: langplan.OFFER_REASONS, the three ways resolve_unsure settles a page
 # without asking (§12.3, decided 2026-11-05). test_record keeps the two tuples equal.
 LANGUAGE_OFFER_REASONS: tuple[str, ...] = ("uncertain", "no_pack", "not_installed", "broken")
@@ -729,6 +744,7 @@ _KNOWN: Mapping[str, frozenset[str]] = {
 }
 _KIND_OPTIONS: Mapping[str, frozenset[str] | None] = {
     "smaller": frozenset({"smaller"}),
+    "thorough": frozenset({"thorough"}),
     "language": None,                                   # a language code
 }
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -1326,6 +1342,8 @@ def _check_offers_fit(p: list[str], offers: list[Any], output: Any) -> None:
     kinds = [o.get("kind") for o in offers if isinstance(o, Mapping)]
     if kinds.count("smaller") > 1:
         p.append("a record offers a smaller copy at most once")
+    if kinds.count("thorough") > 1:
+        p.append("a record offers thorough mode at most once")
     if "smaller" in kinds and isinstance(output, Mapping) and output.get("kind") == "searchable_copy":
         p.append("no smaller copy is offered for a searchable copy")
 

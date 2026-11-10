@@ -266,10 +266,14 @@ def test_fake_engine_through_registry_override(monkeypatch: pytest.MonkeyPatch, 
 # --------------------------------------------------------------------------- versions and the base pack
 
 def test_requires_core_gate(en: manifest.Manifest) -> None:
+    from pdfintake import __version__
+
+    major, minor, _ = (int(x) for x in __version__.split("."))
+    later = f"{major}.{minor + 1}.0"                     # a core this one isn't yet
     d = raw("hu")
-    d["requires_core"] = ">=0.2.0"
-    assert has(problems(d, en), "$.requires_core", "0.2.0", "0.1.0")
-    assert problems(d, en, core_version="0.2.0") == []
+    d["requires_core"] = f">={later}"
+    assert has(problems(d, en), "$.requires_core", later, __version__)
+    assert problems(d, en, core_version=later) == []
     assert problems(d, en, core_version="1.0.0") == []
     with pytest.raises(PackError):
         parse(to_bytes(d), base=en)

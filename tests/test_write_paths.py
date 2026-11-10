@@ -59,6 +59,9 @@ ALLOWED_MODULES: dict[str, str] = {
     "ocr/engines/tesseract.py": "the contract suite's synthetic page, in a folder the suite hands it",
     "ocr/engines/vision.py": "the contract suite's synthetic page, in a folder the suite hands it",
     "ocr/engines/rapid.py": "the contract suite's synthetic page, in a folder the suite hands it",
+    "ocr/engines/dots.py": "the contract suite's canary page, in a folder the suite hands it",
+    "thorough.py": "thorough mode's own config file (thorough.json, beside the passwords file) and its model "
+                   "under <cache>/thorough, downloaded through <cache>/staging",
     "kit/": "the add-a-language kit: drafts, benches and wheels in the contributor's repository; never part of a run",
 }
 FLOW = "flow.py"

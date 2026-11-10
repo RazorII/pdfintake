@@ -272,6 +272,9 @@ class _Use:
     engine: Any
     key: str                       # engine, canonical params and model hashes: one session per key
     avail: Availability
+    # Models that aren't a pack's assets (thorough mode's dots model, §14): called right before an open,
+    # it checks every file against its pin. None: the pack's models, through the store.
+    models: Callable[[], Mapping[str, Path]] | None = None
 
 
 def _asset_sha(pack: InstalledPack, base: InstalledPack, ref: str) -> str:
@@ -337,6 +340,58 @@ def _make_use(pack: InstalledPack, base: InstalledPack, use: EngineUse, platform
         return _Use(pack, use, None, key, broken)
     key = _use_key(pack, base, use, engine)
     return _Use(pack, use, engine, key, _availability(pack, base, use, engine, platform_key))
+
+
+THOROUGH_USE_ID = "dots"
+
+
+def thorough_use(platform_key: str) -> _Use | None:
+    """Thorough mode's dots use (DESIGN §14), or None when the engine can't load. Its models are the
+    pinned dots.mocr files (``thorough.model_paths``, checked before every open), not a pack's. The pack
+    field holds the base pack only so the use has the shape every other use has; nothing reads it."""
+    from .. import thorough
+    from ..langpacks import store as _store
+    from ..langpacks.manifest import EngineUse
+
+    engine, broken = _engine(thorough.ENGINE_NAME)
+    if engine is None:
+        return None
+    use = EngineUse(THOROUGH_USE_ID, thorough.ENGINE_NAME, "reader", {}, ())
+    try:
+        models = thorough.model_paths()
+        avail = engine.availability({}, models, platform_key)
+    except (IntegrityError, PackError, EngineFailure) as exc:
+        avail = Availability(False, "broken", getattr(exc, "message", str(exc)))
+    key = json.dumps([thorough.ENGINE_NAME, thorough.REVISION], ensure_ascii=True)
+    return _Use(_store.base(), use, engine, key, avail, thorough.model_paths)
+
+
+def _with_thorough(prep: _Prepared, thorough: _Use) -> tuple[bool, dict[str, Any]]:
+    """(dots competes in the pick, the pick's params). A ``corroborated_trigrams`` pack for a script
+    other than Latin (th) takes dots as one more reader, last in ``tie_order``. Every Latin pack keeps
+    its pick and takes dots' fills (``thorough_fills``), whatever its rule: de and vi pick with
+    ``corroborated_trigrams`` too, and the fills are what was measured on them (DESIGN §14.1)."""
+    latin_only = set(prep.pack.manifest.scripts or ("Latin",)) <= {"Latin"}
+    if prep.rule.name != "corroborated_trigrams" or latin_only:
+        return False, prep.pick_params
+    params = dict(prep.pick_params)
+    order = [u for u in (params.get("tie_order") or ()) if u != thorough.use.id]
+    params["tie_order"] = [*order, thorough.use.id]
+    return True, params
+
+
+def thorough_fills(prep: _Prepared, lines: Sequence[Line], page_fills: Sequence[Fill], dots: EngineRead,
+                   page: PageImage, script: str) -> list[Fill]:
+    """Dots' fills on a page whose pack doesn't let it compete (§14.1): the numbers whose digit runs the
+    layer lacks and the words in a script the pack doesn't cover, both counted. Nothing else: on text
+    the pack reads, dots' other words were half junk when measured."""
+    if dots.status != "ok" or not dots.lines:
+        return []
+    have = list(lines) + [Line(f.text, f.conf, f.box) for f in page_fills]
+    nums = fills.missing_numbers(dots, have)
+    covered = frozenset(prep.pack.manifest.scripts) or frozenset({"Latin"})
+    words = fills.script_words(dots, [*have, *(Line(f.text, f.conf, f.box) for f in nums)], covered)
+    return [*nums, *words]
 
 
 def resolve_readers(pack: InstalledPack, base: InstalledPack, platform_key: str) -> ResolvedReaderSet:
@@ -413,7 +468,8 @@ class _Sessions:
         return EngineFailure(exc.code, exc.message, **exc.detail)
 
     def _open(self, u: _Use) -> Any:
-        models = store.model_paths(u.pack, self._base, u.use)   # checked now, immediately before the open (§11.2)
+        # checked now, immediately before the open (§11.2)
+        models = u.models() if u.models is not None else store.model_paths(u.pack, self._base, u.use)
         try:
             session = u.engine.open(u.use.id, u.use.role, u.use.params, models)
         except EngineFailure as exc:
@@ -1489,9 +1545,12 @@ def _page_script(plan: PagePlan, sig: PageSignals | None) -> ScriptCall:
 
 def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: PageSignals | None,
                reuse: Mapping[str, EngineRead], extra: Sequence[str], sessions: _Sessions,
-               pool: Mapping[str, InstalledPack], engines: ThreadPoolExecutor | None = None) -> PageOCR:
+               pool: Mapping[str, InstalledPack], engines: ThreadPoolExecutor | None = None,
+               thorough: _Use | None = None) -> PageOCR:
     """Pass 2 for one page (runs in a worker). The page's reads run side by side on the engine
-    threads (``_spawn``) and are taken in the reader set's order."""
+    threads (``_spawn``) and are taken in the reader set's order. With ``thorough`` (§14), dots reads
+    the page too: as one more competing reader on a ``corroborated_trigrams`` pack, otherwise as the
+    source of ``thorough_fills``; a failed dots read changes nothing but a ``thorough_failed`` warning."""
     script = _page_script(plan, sig)
     warnings = [*plan.warnings, *extra]
     if prep is None:                                     # planned with no pack: no reads, no layer
@@ -1507,11 +1566,20 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
                                                      meta={**(raw.meta or {}), "pass1": True})))
         else:
             pending.append(_spawn(engines, lambda u=u: _read(sessions, u, page)))
+    competes, pick_params = _with_thorough(prep, thorough) if thorough is not None else (False, prep.pick_params)
+    dots_at = _spawn(engines, lambda: _read(sessions, thorough, page)) if thorough is not None else None
     for at in pending:
         read = at.result()
         reads.append(dataclasses.replace(read, lines=textfix.apply_normalizers(prep.normalize, read.lines)))
+    dots: EngineRead | None = None
+    if dots_at is not None:
+        raw = dots_at.result()
+        dots = dataclasses.replace(raw, role="reader" if competes else "checker",
+                                   lines=textfix.apply_normalizers(prep.normalize, raw.lines))
     by_id = {r.use_id: r for r in reads}
-    pick = prep.rule.pick(by_id, prep.pick_params, fallback=prep.rs.fallback, checker_id=prep.checker_id)
+    if dots is not None and competes:
+        by_id[dots.use_id] = dots
+    pick = prep.rule.pick(by_id, pick_params, fallback=prep.rs.fallback, checker_id=prep.checker_id)
     checker = by_id.get(prep.checker_id) if prep.checker_id is not None else None
     lines = list(pick.lines)
     repairs: dict[str, int] = {}
@@ -1524,9 +1592,15 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
             for k, v in counts.items():
                 repairs[f"{step.name}.{k}"] = repairs.get(f"{step.name}.{k}", 0) + int(v)
         page_fills = fills.run_fills(prep.fills, lines, checker, page, script.name or prep.script or "Latin")
+        if dots is not None and not competes:
+            page_fills += thorough_fills(prep, lines, page_fills, dots, page, script.name or prep.script or "Latin")
     pick = dataclasses.replace(pick, lines=lines)
     has_layer = pick.chosen is not None
     warnings += _reader_warnings(reads, has_layer)
+    if dots is not None:                                 # its own warning; never reader_failed (§14.1)
+        reads.append(dots)
+        if dots.status in ("failed", "timeout"):
+            warnings.append("thorough_failed")
     warnings += [w for w in pick.warnings if w in rules.PICK_WARNING_CODES]
     if pick.fallback:
         warnings.append("fallback_used")
@@ -1548,7 +1622,8 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
 
 
 def read_pages(pages: Sequence[PageImage], plans: Sequence[PagePlan], packs: Mapping[str, InstalledPack],
-               base: InstalledPack, platform_key: str, *, signals: DocumentSignals | None, workers: int) -> list[PageOCR]:
+               base: InstalledPack, platform_key: str, *, signals: DocumentSignals | None, workers: int,
+               thorough: _Use | None = None) -> list[PageOCR]:
     """Pass 2: read each planned page with its pack's reader set; one ``PageOCR`` per plan, in plan order.
 
     ``packs`` holds every pack a plan names (the base pack may be left out: ``base`` reads its
@@ -1597,7 +1672,7 @@ def read_pages(pages: Sequence[PageImage], plans: Sequence[PagePlan], packs: Map
     try:
         futures = [executor.submit(_read_page, prepared.get(pp.pack) if pp.pack is not None else None,
                                    by_index[pp.index], pp, sigs.get(pp.index), reuse.get(pp.index, {}),
-                                   list(extra.get(pp.index, ())), sessions, pool, engines)
+                                   list(extra.get(pp.index, ())), sessions, pool, engines, thorough)
                    for pp in plan_list]
         return [f.result() for f in futures]
     finally:

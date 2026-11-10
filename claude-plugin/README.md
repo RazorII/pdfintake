@@ -16,7 +16,7 @@ English is built in, and French, German, Hungarian, Italian, Polish, Portuguese,
 ## What the plugin runs and connects to
 
 - **The plugin is one skill**: instructions that tell Claude how to use the `pdfintake` command. It has no hooks, no MCP servers and no background processes.
-- **It runs one command, `pdfintake`**, MIT licensed, source at [github.com/RazorII/pdfintake](https://github.com/RazorII/pdfintake). If it isn't installed, Claude installs the release this plugin belongs to, pinned to its tag (`git+https://github.com/RazorII/pdfintake@v0.1.0`), with uv.
+- **It runs one command, `pdfintake`**, MIT licensed, source at [github.com/RazorII/pdfintake](https://github.com/RazorII/pdfintake). If it isn't installed, Claude installs the release this plugin belongs to, pinned to its tag (`git+https://github.com/RazorII/pdfintake@v0.2.0`), with uv.
 - **pdfintake does all its work on your computer.** OCR runs locally with Tesseract, RapidOCR and, on a Mac, Apple Vision. pdfintake never starts another program while it works, so no outside PDF or OCR tool ever touches your files.
 - **It connects to these sites and no others:**
   - `github.com`: to install the command, and to download the English data and any language pack, which are files attached to pdfintake's own GitHub releases.

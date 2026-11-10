@@ -87,7 +87,11 @@ _REGISTRY: dict[str, str] = {
     "tesseract": "pdfintake.ocr.engines.tesseract:ENGINE",
     "vision":    "pdfintake.ocr.engines.vision:ENGINE",
     "rapidocr":  "pdfintake.ocr.engines.rapid:ENGINE",
+    "dots":      "pdfintake.ocr.engines.dots:ENGINE",       # thorough mode's reader (DESIGN §14); no pack lists it
 }
+
+# Registered engines a pack may not name: thorough mode adds dots itself, with its own pinned model.
+NOT_FOR_PACKS: frozenset[str] = frozenset({"dots"})
 
 _lock = threading.RLock()
 _loaded: dict[tuple[str, str], Any] = {}                                # (name, "module:attr") -> engine

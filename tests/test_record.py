@@ -37,6 +37,7 @@ SPEC_WARNINGS = {
     "metadata_format_limit",
     "exporting_a_copy",                                 # §11.1, export only
     "language_uncertain", "no_pack_for_language", "pack_not_installed",                # §12.3
+    "thorough_failed", "thorough_unavailable",                                        # §14
 }
 SPEC_NOTES = {"input_unchanged", "nothing_written", "vision_not_on_platform", "pack_fetched",
               "mixed_script_unchecked", "rotate_kept",
@@ -124,10 +125,10 @@ def test_interface_constants():
     assert record.RECORD_VERSION == 1
     assert get_args(record.ApplyFlag) == ("--choice", "--lang")                  # §12.5: no --provenance
     assert record.RECORD_ID_RE.pattern == r"^r-[0-9]{8}-[0-9a-f]{8}$"
-    assert record.OPTION_ID_RE.pattern == r"^(smaller|none|[a-z]{2,3})$"
-    assert get_args(record.OfferKind) == ("language", "smaller")
-    assert record.OFFER_KINDS == ("language", "smaller")
-    assert dict(record.APPLY_FLAG_FOR) == {"language": "--lang", "smaller": "--choice"}
+    assert record.OPTION_ID_RE.pattern == r"^(smaller|thorough|none|[a-z]{2,3})$"
+    assert get_args(record.OfferKind) == ("language", "smaller", "thorough")              # §14: thorough mode
+    assert record.OFFER_KINDS == ("language", "smaller", "thorough")
+    assert dict(record.APPLY_FLAG_FOR) == {"language": "--lang", "smaller": "--choice", "thorough": "--choice"}
     assert [f.name for f in dataclasses.fields(record.Offer)] == ["kind", "apply_flag", "summary", "options"]
     assert [f.name for f in dataclasses.fields(record.Option)] == ["id", "label", "description"]
 

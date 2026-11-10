@@ -1,7 +1,7 @@
 {
   "name": "pdfintake",
   "displayName": "pdfintake",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn scans, phone photos and PDFs into small, searchable PDFs on your own computer: lossless image-to-PDF, an OCR text layer, lossless shrinking, and a smaller copy only when you ask for one. English is built in, and French, German, Hungarian, Italian, Polish, Portuguese, Spanish, Thai and Vietnamese are language packs, downloaded the first time a document needs one.",
   "author": {
     "name": "RazorII",

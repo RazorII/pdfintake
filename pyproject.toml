@@ -54,6 +54,11 @@ test = [
   "uharfbuzz==0.57.0",
 ]
 kit = ["uharfbuzz==0.57.0"]
+# Thorough mode (dots.mocr on the GPU): Apple silicon only; elsewhere the extra installs nothing.
+thorough = [
+  "mlx==0.32.3; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "tokenizers>=0.23,<0.24; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
 kit-thai = ["pythainlp"]
 
 [project.scripts]
@@ -84,4 +89,5 @@ markers = [
   "network: may open sockets beyond loopback; every other test runs with the network blocked (tests/conftest.py)",
   "cli_subprocess: starts the pdfintake CLI in a subprocess",
   "vision: needs Apple Vision; scripts/release.sh runs pytest -m vision on the release Mac",
+  "thorough: needs thorough mode's model (dots.mocr) on an Apple-silicon Mac; scripts/thorough-local.sh runs pytest -m thorough before a release",
 ]

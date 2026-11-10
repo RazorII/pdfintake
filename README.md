@@ -10,6 +10,7 @@ pdfintake run 'Receipt.pdf'
 
 - **Images become a PDF without losing anything.** A JPEG goes in byte for byte. A PNG or TIFF keeps its bit depth, colour space and transparency. A sideways photo is turned by the page, not by re-encoding its pixels. HEIC, AVIF and lossy WebP, which a PDF can't hold as they are, are encoded once.
 - **Pages that are only pictures of text get an invisible OCR text layer**, so you can search and copy them. Pages that already carry real text are never read again, so printed words can't be overwritten.
+- **A PDF whose text comes out as garbage gets its broken font map rebuilt**, so it can be searched and copied, without OCR and without changing a pixel (below).
 - **The file is shrunk losslessly**, and never made bigger.
 - **A smaller copy is made only when you ask for it** (`--smaller`), and only where it's worth it: at least 30% smaller, with its most detailed part still scoring 90 or more out of 100 on the SSIMULACRA2 scale. It's saved beside the full-quality file. Without the flag, the record says which files could be made smaller, so you can ask later.
 - **Every build is checked before it's written**: each page renders the same as the input, every image is identical, the text layer is all there and on the page, and the file's structure is sound. If any check fails, nothing is written.
@@ -153,11 +154,18 @@ pdfintake thorough decline         # "no thanks": records stop offering it (enab
 
 `pdfintake thorough enable` exits 3 with one of these codes when it can't: `thorough_not_supported` (not a Mac with Apple silicon, or macOS older than 14), `thorough_libraries_missing` (the message gives the install command), `thorough_no_room`, `thorough_download_failed`, `thorough_download_refused`, `thorough_download_size`, `thorough_redirect_refused` (a download sent anywhere but Hugging Face), `thorough_model_changed` (a file arrived with another SHA-256; nothing is kept) or `thorough_canary_failed` (the test page didn't read back; the mode stays off). `run --thorough` and `--no-thorough` override the setting for one run. Until you decide, every record written on such a Mac carries a `thorough` offer, and `pdfintake apply <record id> --choice thorough` reads that document again in the mode. Off a Mac with Apple silicon nothing changes, and with the mode off every output is byte for byte what it would have been.
 
+### Broken font maps
+
+Some PDFs look perfect but search and copy as garbage: their fonts carry no map from glyphs to letters, which drawing doesn't need and searching does. pdfintake finds those glyphs, works out which letter each one draws and adds the missing map. Nothing else in the file changes, and every page must render exactly as before (in pdfium, and on a Mac in Quartz too), or nothing is written.
+
+It identifies a glyph from, in order: the font's own data; a font of the same family installed on your computer, matched by outline (read where it is, never copied or sent); another font in the same PDF whose map works; and last, OCR of a few chosen pages, aligned with the glyphs and voted letter by letter. Letters that look alike across Latin, Greek and Cyrillic (a and а) are decided by the other letters in their words. A letter nothing proves is never guessed: it reads as � and the page gets the warning `font_map_partial`. A page with nothing proven keeps `garbled_text`, as before.
+
+It covers embedded TrueType and CFF fonts drawn as Type0 (Identity) fonts, and simple CFF and symbolic TrueType fonts. Fonts that aren't embedded, Type3 fonts, Type1 programs and simple TrueType fonts with an encoding are left as they are, as is a map that's complete but wrong. OCR evidence covers any language pack's script whose glyphs are stored in reading order (Latin and Thai today); a glyph that draws several letters (a ligature) is mapped only from font data.
+
 ## What it doesn't do (yet)
 
 - **Sign or certify** an exported copy. That's planned for a later version.
 - **Read pictures on pages that also carry printed text** (a photo with a caption, a stamped header). Such pages are left as they are, with a warning.
-- **Repair a broken font map** in a born-digital PDF whose text comes out garbled. It's detected and reported.
 - **Perspective-correct or deskew** a phone photo.
 - Hold 16-bit colour images with transparency, 16-bit colour TIFF, or 12-bit and lossless JPEG exactly. Those fail with a clear message rather than lose data.
 

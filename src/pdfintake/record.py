@@ -112,7 +112,9 @@ WARNING_GROUPS: Mapping[str, tuple[str, ...]] = {
                  # §12.3: nothing is asked, so what used to be a question is now a warning
                  "language_uncertain", "no_pack_for_language", "pack_not_installed"),
     "pages": ("existing_layer_replaced", "layer_shrank", "existing_layer_kept", "image_text_not_read",
-              "garbled_text", "clip_text_kept"),
+              "garbled_text", "clip_text_kept",
+              # §15: a repaired font map left some letters unproven on this page
+              "font_map_partial"),
     "layer": ("layer_dropped_chars",),
     "orientation": ("orientation_disagree", "not_turned_annotations"),
     "input": ("input_repaired", "contains_jbig2", "revisions_dropped", "objects_dropped", "render_capped",
@@ -126,7 +128,9 @@ NOTE_CODES: frozenset[str] = frozenset({"input_unchanged", "nothing_written", "v
                                          "signature_not_carried", "conformance_claim_dropped", "copy_unlocked",
                                          "skipped_no_password",
                                          # §11.2: a page rendered smaller to stay within 32767 px a side
-                                         "render_scaled_down"})
+                                         "render_scaled_down",
+                                         # §15: the page's broken font map was rebuilt, nothing drawn changed
+                                         "font_map_repaired"})
 
 # Core's default wording. A caller may pass a more specific core-worded message, never pack text.
 WARNING_MESSAGES: Mapping[str, str] = {
@@ -153,7 +157,10 @@ WARNING_MESSAGES: Mapping[str, str] = {
     "layer_shrank": "The new text layer on this page holds less text than the one it replaced.",
     "existing_layer_kept": "This page already has hidden text that can't be removed safely, so pdfintake left the page as it was.",
     "image_text_not_read": "This page has printed text, so pdfintake didn't read it again. Text inside its pictures isn't searchable.",
-    "garbled_text": "This page's text can't be read back correctly (its font map is broken), so pdfintake left it as it was. Searching it may not work.",
+    "garbled_text": ("This page's text can't be read back correctly (its font map is broken, and pdfintake couldn't "
+                     "rebuild it), so pdfintake left it as it was. Searching it may not work."),
+    "font_map_partial": ("Some letters on this page couldn't be identified for certain, so they read as \ufffd when "
+                         "searched or copied; the rest now read correctly."),
     "clip_text_kept": "This page uses text as a clipping shape, and pdfintake left it as it was.",
     "layer_dropped_chars": "Some characters couldn't be written into the text layer.",
     "orientation_disagree": "The two orientation checks disagreed on this page, so pdfintake didn't turn it.",
@@ -179,6 +186,8 @@ NOTE_MESSAGES: Mapping[str, str] = {
     "skipped_no_password": ("This file needs a password to open, and none of the saved passwords opened it, so nothing "
                             "was written and the file was left exactly as it is."),
     "render_scaled_down": "This page is too large to read at full size (no side may pass 32767 pixels), so it was read scaled down to fit.",
+    "font_map_repaired": ("This page's text was drawn with a font that had no working map to letters, so it couldn't "
+                          "be searched or copied correctly. pdfintake added the map; nothing on the page changed."),
 }
 
 # The usage codes (exit 2) a record can carry that the docs and the skill explain, with core's wording.

@@ -38,12 +38,14 @@ SPEC_WARNINGS = {
     "exporting_a_copy",                                 # §11.1, export only
     "language_uncertain", "no_pack_for_language", "pack_not_installed",                # §12.3
     "thorough_failed", "thorough_unavailable",                                        # §14
+    "font_map_partial",                                                               # §15
 }
 SPEC_NOTES = {"input_unchanged", "nothing_written", "vision_not_on_platform", "pack_fetched",
               "mixed_script_unchecked", "rotate_kept",
               "signature_not_carried", "conformance_claim_dropped", "copy_unlocked",       # §10.2, §11.1
               "skipped_no_password",                                                       # §12.1
-              "render_scaled_down"}                                                        # §11.2
+              "render_scaled_down",                                                        # §11.2
+              "font_map_repaired"}                                                         # §15
 PASSWORD = "made up record phrase"          # a made-up test password
 CANARY = "ZQXJ-canary-Wombat-7781"
 HEX64 = "9f" * 32

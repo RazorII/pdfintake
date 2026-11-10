@@ -56,6 +56,8 @@ ALLOWED_MODULES: dict[str, str] = {
     "pdf/shrink.py": "the shrunk work PDF in the run's work folder",
     "pdf/smaller.py": "the candidate in <cache>/staging, JPEG encodes into memory",
     "pdf/export.py": "the export, built in staging; flow.commit writes it to the user's path",
+    "pdf/fontmap.py": "the font-map repair's probe copies of the work PDF, in the run's work folder (DESIGN §15), "
+                      "removed when the step ends",
     "ocr/engines/tesseract.py": "the contract suite's synthetic page, in a folder the suite hands it",
     "ocr/engines/vision.py": "the contract suite's synthetic page, in a folder the suite hands it",
     "ocr/engines/rapid.py": "the contract suite's synthetic page, in a folder the suite hands it",

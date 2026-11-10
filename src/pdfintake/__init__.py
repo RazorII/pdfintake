@@ -3,7 +3,7 @@
 import os as _os
 
 # The only version source: hatchling reads it, and scripts/release.sh greps this exact line.
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 # onnxruntime's official builds (macOS, Linux and Windows) send usage telemetry to Microsoft by
 # default, and keep a device id and an event queue under the user's home, from the moment

@@ -9,7 +9,7 @@ pdfintake turns images into an upright PDF without touching their pixels, adds a
 
 **Nothing is asked, before or during a run.** People hand pdfintake big piles of PDFs and want them done in the background. So don't ask questions, don't offer a menu of choices, and don't stop to check "should I…". Read the request, turn the user's own words into flags, run the whole batch, and give **one summary at the end** (section 5). Anything the user might still want (another language for a page, smaller copies, a password for skipped files) goes into that summary as a one-line offer, never as a question that holds anything up. Thorough mode on a Mac with Apple silicon is one of those offers too (section 5).
 
-This skill needs **pdfintake 0.2.0 or newer**. It works wherever you can run shell commands: Claude Code on macOS, Windows or Linux, and claude.ai's own sandbox.
+This skill needs **pdfintake 0.3.0 or newer**. It works wherever you can run shell commands: Claude Code on macOS, Windows or Linux, and claude.ai's own sandbox.
 
 ## 1. Find pdfintake, or install it
 
@@ -18,15 +18,15 @@ uv puts the command in `~/.local/bin`, which often isn't on the shell's PATH. So
 1. `pdfintake --version`
 2. If that's not found: `~/.local/bin/pdfintake --version` (on Windows, `%USERPROFILE%\.local\bin\pdfintake.exe --version`), or `"$(uv tool dir --bin)/pdfintake" --version` when uv is installed.
 
-Use whichever works for everything below. If it reports a version older than 0.2.0, reinstall this release over it: `uv tool install --force git+https://github.com/RazorII/pdfintake@v0.2.0`. A plain `uv tool upgrade` keeps the old pin, so it won't move it.
+Use whichever works for everything below. If it reports a version older than 0.3.0, reinstall this release over it: `uv tool install --force git+https://github.com/RazorII/pdfintake@v0.3.0`. A plain `uv tool upgrade` keeps the old pin, so it won't move it.
 
 Only if none of them works, install this release:
 
 ```
-uv tool install git+https://github.com/RazorII/pdfintake@v0.2.0
+uv tool install git+https://github.com/RazorII/pdfintake@v0.3.0
 ```
 
-Use uv. pipx or pip work only with an explicit Python 3.11 to 3.14 interpreter (`pipx install --python python3.12 git+https://github.com/RazorII/pdfintake@v0.2.0`). In claude.ai, always use uv: its Python refuses pip with "externally-managed-environment".
+Use uv. pipx or pip work only with an explicit Python 3.11 to 3.14 interpreter (`pipx install --python python3.12 git+https://github.com/RazorII/pdfintake@v0.3.0`). In claude.ai, always use uv: its Python refuses pip with "externally-managed-environment".
 
 Then run `pdfintake doctor --json` once per environment. Exit 3 means something it needs is missing or broken; the JSON names it. Tell the user plainly. If a download failed, say that an organisation's network setting may block package downloads (from github.com or files.pythonhosted.org), and that nothing can be converted until it's allowed.
 
@@ -115,7 +115,7 @@ Short, plain and in this order. Leave out any part with nothing in it.
 3. **Language**, one line per file: pages read with an uncertain language (`language_uncertain`), or in a language with no pack yet (`no_pack_for_language`, `pack_not_installed`, `pack_broken`). Use the offer's `summary` from the record. When a language has no pack, say once that anyone can add one (the repository's `docs/add-a-language.md`).
 4. **Smaller copies**, in one line, when records carry a `smaller` offer: "12 files could be made about 60% smaller (180 MB to 70 MB in all); ask if you want smaller copies."
 5. **Thorough mode**, when a record carries a `thorough` offer (a Mac with Apple silicon where the user hasn't decided yet), once per conversation: give the offer's `summary` in its own words (what the mode needs, what it costs, what it gives), and say that you can set it up, or that a "no thanks" stops the offer for good. Nothing waits on it. Then, only on the user's word:
-   - **Yes:** install the libraries with `uv tool install --reinstall 'pdfintake[thorough] @ git+https://github.com/RazorII/pdfintake@v0.2.0'`, then run `pdfintake thorough enable --json`. It downloads 4.4 GB and reads a test page, so it can take several minutes; say so, and run it in the background if you can. Exit 3 means it couldn't (the JSON's `error.message` says why: no room, a blocked download, a failed test read); report that and stop. When it worked, say in one line that this batch can be read again in thorough mode.
+   - **Yes:** install the libraries with `uv tool install --reinstall 'pdfintake[thorough] @ git+https://github.com/RazorII/pdfintake@v0.3.0'`, then run `pdfintake thorough enable --json`. It downloads 4.4 GB and reads a test page, so it can take several minutes; say so, and run it in the background if you can. Exit 3 means it couldn't (the JSON's `error.message` says why: no room, a blocked download, a failed test read); report that and stop. When it worked, say in one line that this batch can be read again in thorough mode.
    - **No:** run `pdfintake thorough decline --json`, and don't bring it up again. The user can still turn it on later with `pdfintake thorough enable`.
    - **Nothing said** (they moved on): leave it; later batches' records keep offering it.
 
@@ -194,7 +194,8 @@ Every warning goes to the user. Explain it in a few plain words; the record's `m
 - `layer_shrank`: the new text layer holds noticeably less text than the old one it replaced. Worth a search test.
 - `existing_layer_kept`: the page has hidden text that can't be removed safely, so it was left as it was.
 - `image_text_not_read`: the page has printed text, so it wasn't read again, and text inside its pictures isn't searchable.
-- `garbled_text`: the page's text can't be read back correctly (a broken font map), so it was left as it was, and searching it may not work.
+- `garbled_text`: the page's text can't be read back correctly (a broken font map that pdfintake couldn't rebuild), so it was left as it was, and searching it may not work.
+- `font_map_partial`: pdfintake rebuilt the page's broken font map, but couldn't identify some letters for certain; those read as a placeholder (�) when searched or copied, and the rest read correctly.
 - `clip_text_kept`: the page uses text as a clipping shape and was left as it was.
 
 **Text layer:**
@@ -225,6 +226,7 @@ One closing line for all of them, except `copy_unlocked`, `signature_not_carried
 - `pack_fetched`: a language pack was downloaded.
 - `mixed_script_unchecked`: pdfintake couldn't yet check this page for text in a second writing system.
 - `rotate_kept`: the page's rotation flag was kept as it was.
+- `font_map_repaired`: the page's text was drawn with a font that had no working map to letters, so it couldn't be searched or copied; pdfintake added the map, and nothing on the page changed.
 - `render_scaled_down`: the page was too big to read at full size (no side may pass 32,767 pixels), so it was read scaled down. Small print may read less well.
 - `signature_not_carried`: the copy shows the signature stamp as it was drawn, but carries no signature. Say it with the copies in part 1 of the summary: "The signed original is the one that counts; this copy is for finding it."
 - `conformance_claim_dropped`: the copy no longer claims to be PDF/A or PDF/UA, because an added text layer breaks that claim. The original still does.

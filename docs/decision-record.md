@@ -71,6 +71,10 @@ A step's `detail` holds that step's own facts (counts, page numbers, flags, pack
 
 `cached` is always false for a password-protected or edit-locked input, which is never cached.
 
+The `fontmap` step (PDF inputs; DESIGN §15) runs before `classify`. Its status is `changed` when it wrote maps, `ok` when there was nothing to do or nothing could be proven, `failed` when the repair itself couldn't run (the file then goes on as it would have without it; `detail.error` names the kind of failure). Its `detail`: `fonts` (fonts given a map; 0 when pdfium already reads every glyph), `fonts_left` (fonts that need one and got none), `codes` (glyph codes written, by evidence: `program`, `installed`, `document`, `ocr`, and `unproven`, which read as U+FFFD), `pages` (pages whose every unmapped glyph is now mapped), `partial` (pages with some left unproven: warning `font_map_partial`), `unrepaired` (pages with nothing proven: warning `garbled_text`), `ocr_pages` (pages read for OCR evidence) and `planned` (true under `--plan`, which reads no page and writes nothing). With `--plan`, `fonts` and `codes` say what a run would write without OCR evidence, and `ocr_pages` which pages it would read.
+
+`verify[]` adds two checks when a map was written: `fonts_mapped` (every repaired glyph reads back as its map says) and, on macOS, `renders_identical_quartz` (every repaired page renders identically in Quartz too).
+
 ### `output` of a searchable copy
 
 A file from the other side, an evidence original, or a signed, certified, PDF/A, PDF/UA-needing-a-layer or encrypted file is never changed. pdfintake writes a lossless searchable copy beside it, `<name> (searchable copy).pdf` (or in `--outdir`), exit 0. Its `output` reads:
@@ -168,13 +172,15 @@ A warning is something the user should hear about. Show every one, always; a deg
 |---|---|
 | readers | `reader_failed`, `reader_timeout`, `fallback_used`, `agreement_low`, `no_layer_readers_failed`, `vision_language_unsupported`, `thorough_failed`, `thorough_unavailable` |
 | language | `mixed_language_page`, `mixed_script_page`, `mixed_script_no_pack`, `pack_broken`, `language_uncertain`, `no_pack_for_language`, `pack_not_installed` |
-| pages | `existing_layer_replaced`, `layer_shrank`, `existing_layer_kept`, `image_text_not_read`, `garbled_text`, `clip_text_kept` |
+| pages | `existing_layer_replaced`, `layer_shrank`, `existing_layer_kept`, `image_text_not_read`, `garbled_text`, `clip_text_kept`, `font_map_partial` |
 | layer | `layer_dropped_chars` |
 | orientation | `orientation_disagree`, `not_turned_annotations` |
 | input | `input_repaired`, `contains_jbig2`, `revisions_dropped`, `objects_dropped`, `render_capped`, `metadata_format_limit` |
 | export | `exporting_a_copy` (export only: the export was made from a searchable copy, not from the original) |
 
 `layer_dropped_chars` reads "Some characters couldn't be written into the text layer." It counts characters with no glyph in the layer's fonts and characters of lines whose box couldn't be placed.
+
+`font_map_partial`: pdfintake rebuilt the page's broken font map (the `fontmap` step), but some letters couldn't be proven; those map to U+FFFD, so they read as � when searched or copied, and the rest read correctly. `garbled_text` is a page whose broken map nothing could be proven for: it was left as it was.
 
 The language warnings that replace what used to be a question:
 
@@ -191,6 +197,7 @@ A note is information, reported in one summary line:
 
 - `input_unchanged`, `nothing_written`, `vision_not_on_platform`, `pack_fetched`, `mixed_script_unchecked`, `rotate_kept`.
 - `render_scaled_down`: a page was rendered smaller so that no side passes 32767 pixels, the OCR engine's limit.
+- `font_map_repaired`: the page's text was drawn with a font that had no working map from glyphs to letters, and pdfintake added the map (the `fontmap` step). Nothing drawn changed, and verify proves it (above, `verify[]`).
 - For a searchable copy: `signature_not_carried` ("The signed original is the one that counts; this copy is for finding it."), `conformance_claim_dropped` (the copy no longer claims PDF/A or PDF/UA), and `copy_unlocked` ("The copy has no password, so anyone with the file can read it."). A copy is always saved without encryption, so it can be searched; always report `copy_unlocked` in one line.
 - `skipped_no_password`: the file needs a password to open and no saved password opened it, so nothing was written and the file is untouched (exit 0).
 

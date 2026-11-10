@@ -10,8 +10,11 @@ don't count. Text objects holding only whitespace print nothing and are ignored 
 Classes (DESIGN §2.2, U5):
 
 * ``born_digital``: visible text, garble ratio under 0.05. No OCR; warning ``image_text_not_read``
-  when images cover at least half the page.
-* ``garbled``: visible text, garble ratio 0.05 or more. No OCR; warning ``garbled_text``.
+  when images cover at least half the page. A page whose broken font map ``pdf/fontmap.py`` repaired
+  (wholly or in part) is ``born_digital`` whatever its ratio: the repair reports it (DESIGN §15).
+* ``garbled``: visible text, garble ratio 0.05 or more, or visible glyphs whose codes have no map
+  that the repair couldn't prove (``font_pages`` says ``unrepaired``), whatever the ratio: the
+  mojibake of an unmapped font is often valid Latin-1. No OCR; warning ``garbled_text``.
 * ``clip_text``: no visible text, some mode-7 text. No OCR; warning ``clip_text_kept``.
 * ``invisible_layer``: text present, none visible, and none of it adds to the clipping path: every
   piece is mode 3, or a fill or stroke mode (0, 1, 2) whose paint is fully transparent (Scanner
@@ -31,6 +34,7 @@ Classes (DESIGN §2.2, U5):
 from __future__ import annotations
 
 import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -178,11 +182,11 @@ def _our_marker(pdf: "pikepdf.Pdf", index: int) -> bool:
 
 
 def _decide(index: int, t: _Tally, coverage: float, marker: bool, *, redo_ocr: bool,
-            keep_existing_layer: bool) -> PageClass:
+            keep_existing_layer: bool, font_page: str | None = None) -> PageClass:
     warnings: list[str] = []
     if t.visible_chars:
         ratio = garble_ratio("".join(t.visible))
-        if ratio >= GARBLE_LIMIT:
+        if font_page == "unrepaired" or (ratio >= GARBLE_LIMIT and font_page not in ("repaired", "partial")):
             kind: PageKind = "garbled"
             warnings.append("garbled_text")
         else:
@@ -216,8 +220,11 @@ def _decide(index: int, t: _Tally, coverage: float, marker: bool, *, redo_ocr: b
     return PageClass(index, kind, 0, t.invisible_chars, ratio, coverage, needs, strip, warnings)
 
 
-def classify(pdf: Path, *, redo_ocr: bool, keep_existing_layer: bool) -> list[PageClass]:
-    """One ``PageClass`` per page, in page order."""
+def classify(pdf: Path, *, redo_ocr: bool, keep_existing_layer: bool,
+             font_pages: Mapping[int, str] | None = None) -> list[PageClass]:
+    """One ``PageClass`` per page, in page order. ``font_pages`` is the font-map repair's outcome per
+    page (``repaired``, ``partial`` or ``unrepaired``; 0-based keys), empty when it found nothing."""
+    font_pages = font_pages or {}
     out: list[PageClass] = []
     with Renderer(Path(pdf)) as r:
         for index in range(r.page_count()):
@@ -226,5 +233,5 @@ def classify(pdf: Path, *, redo_ocr: bool, keep_existing_layer: bool) -> list[Pa
             coverage = r.image_coverage(index)
             marker = _our_marker(r._pikepdf(), index) if tally.invisible_chars and not tally.visible_chars else False
             out.append(_decide(index, tally, coverage, marker, redo_ocr=redo_ocr,
-                               keep_existing_layer=keep_existing_layer))
+                               keep_existing_layer=keep_existing_layer, font_page=font_pages.get(index)))
     return out

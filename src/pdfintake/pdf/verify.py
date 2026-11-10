@@ -29,11 +29,13 @@ appearance the flattening draws. Two checks run on copies only: ``not_encrypted`
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import decimal
 import functools
 import hashlib
 import math
 import re
+import sys
 import unicodedata
 from collections import Counter
 from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
@@ -68,7 +70,7 @@ STANDARD_INFO_KEYS = frozenset({"Title", "Author", "Subject", "Keywords", "Creat
 CHECK_NAMES = ("text_retention", "off_page_glyphs", "renders_identical", "images_identical",
                "passthrough_identical", "upright", "no_jbig2_written", "no_signature_material",
                "metadata_kept", "structure_ok", "not_encrypted", "derived_from_present",
-               "text_layer_identical")
+               "text_layer_identical", "fonts_mapped", "renders_identical_quartz")
 
 # refusals.output_signature_material's labels, as no_signature_material words them
 _OUTPUT_SIG_WORDS = {"/ByteRange": "/ByteRange", "/Perms": "/Perms", "/Sig field": "a signed /Sig field",
@@ -94,6 +96,8 @@ class BuildContext:
     allowed_meta_changes: frozenset[str]
     original_sha256: str | None = None                # copy mode: the original's SHA-256 (§10.2)
     original_name: str | None = None                  # copy mode: the original's file name, when known
+    font_expected: Mapping[int, Sequence[tuple[Sequence[float], str]]] = dataclasses.field(default_factory=dict)
+    # §15: page -> (box, text) of every glyph whose font map was repaired
 
 
 # --------------------------------------------------------------------------- shared helpers
@@ -1115,6 +1119,136 @@ def text_layer_identical(a: Path, b: Path) -> Check:
     return Check("text_layer_identical", True, f"{pages} page(s), {chars} character(s) identical")
 
 
+_HYPHENS = str.maketrans({"\ufffe": "-", "\x02": "-", "\u00ad": "-"})
+
+
+@_guard("fonts_mapped")
+def fonts_mapped(built: Path, expected: Mapping[int, Sequence[tuple[Sequence[float], str]]]) -> Check:
+    """Every repaired glyph reads back as the repair decided (DESIGN §15.5).
+
+    ``expected`` holds, per page, each repaired glyph's box (left, bottom, right, top in page space)
+    and its decided text. pdfium's characters at that box in the built file, joined, must be that text
+    (NFC; U+FFFD where unproven). pdfium marks a hyphen that ends a line as U+FFFE or U+0002, or drops
+    it, depending on the text beside it, so the hyphen forms count as one and a missing hyphen is
+    allowed; a glyph mapped to a space isn't checked, since pdfium boxes spaces its own way (both
+    measured 2026-11-10).
+    """
+    differ: list[tuple[int, int]] = []
+    glyphs = 0
+    with _lock(), _pdfium(Path(built)) as doc:
+        count = len(doc)
+        for i in sorted(int(p) for p in expected):
+            want = expected[i]
+            glyphs += len(want)
+            if not 0 <= i < count:
+                differ.append((i, len(want)))
+                continue
+            at: dict[tuple[float, ...], list[str]] = {}
+            page = doc[i]
+            try:
+                textpage = page.get_textpage()
+                try:
+                    for k in range(textpage.count_chars()):
+                        if _raw().FPDFText_IsGenerated(textpage.raw, k) == 1:
+                            continue
+                        box = textpage.get_charbox(k)
+                        u = _raw().FPDFText_GetUnicode(textpage.raw, k)
+                        at.setdefault(_box_key(box), []).append(chr(u) if 0 < u <= 0x10FFFF else "")
+                finally:
+                    textpage.close()
+            finally:
+                page.close()
+            bad = 0
+            for box, text in want:
+                if not text.strip():
+                    continue                       # a space: pdfium boxes and keeps spaces its own way
+                got = at.get(_box_key(box))
+                take = max(1, len(text))                 # a glyph drawn twice at one box reads twice
+                read = _fold("".join(got[:take])) if got else ""
+                if got:
+                    del got[:take]
+                if read == _fold(text) or (not read and _fold(text) == "-"):
+                    continue
+                bad += 1
+            if bad:
+                differ.append((i, bad))
+    if differ:
+        first, n = differ[0]
+        return Check("fonts_mapped", False,
+                     f"{_pages_text([p for p, _n in differ])} differ ({_human(first)}: {n} glyph(s) read otherwise "
+                     "than the map says)", _pg(first))
+    return Check("fonts_mapped", True, f"{glyphs} glyph(s) on {len(expected)} page(s) read as mapped")
+
+
+def _raw() -> Any:
+    import pypdfium2.raw as raw
+
+    return raw
+
+
+def _box_key(box: Sequence[float]) -> tuple[float, ...]:
+    """A character box as the font-map repair's probe keys it (left, bottom, right, top, 2 decimals).
+    pypdfium2's ``get_charbox`` gives (left, bottom, right, top) like ``fontmap._box``."""
+    return tuple(round(float(v), 2) for v in box)
+
+
+def _fold(text: str) -> str:
+    return unicodedata.normalize("NFC", text).translate(_HYPHENS)
+
+
+def _quartz_gray(path: Path, pages: Sequence[int]) -> dict[int, bytes] | None:
+    """Each page rendered by Quartz (CoreGraphics, in process), 72 dpi grey; None off a Mac or without pyobjc."""
+    if sys.platform != "darwin":
+        return None
+    try:
+        import Quartz
+    except Exception:  # noqa: BLE001 - no pyobjc here: the check can't run
+        return None
+    url = Quartz.CFURLCreateFromFileSystemRepresentation(None, str(path).encode("utf-8"), len(str(path).encode("utf-8")), False)
+    doc = Quartz.CGPDFDocumentCreateWithURL(url)
+    if doc is None:
+        raise ValueError("quartz could not open the file")
+    out: dict[int, bytes] = {}
+    space = Quartz.CGColorSpaceCreateDeviceGray()
+    for i in pages:
+        page = Quartz.CGPDFDocumentGetPage(doc, i + 1)
+        if page is None:
+            raise ValueError("quartz could not open a page")
+        box = Quartz.CGPDFPageGetBoxRect(page, Quartz.kCGPDFCropBox)
+        w = max(1, int(math.ceil(box.size.width)))
+        h = max(1, int(math.ceil(box.size.height)))
+        if w * h > RENDER_MAX_PIXELS:
+            raise ValueError("page too large for the quartz check")
+        ctx = Quartz.CGBitmapContextCreate(None, w, h, 8, w, space, Quartz.kCGImageAlphaNone)
+        Quartz.CGContextSetGrayFillColor(ctx, 1.0, 1.0)
+        Quartz.CGContextFillRect(ctx, Quartz.CGRectMake(0, 0, w, h))
+        transform = Quartz.CGPDFPageGetDrawingTransform(page, Quartz.kCGPDFCropBox, Quartz.CGRectMake(0, 0, w, h), 0, True)
+        Quartz.CGContextConcatCTM(ctx, transform)
+        Quartz.CGContextDrawPDFPage(ctx, page)
+        data = Quartz.CGBitmapContextGetData(ctx)
+        out[i] = bytes(data.as_buffer(w * h)) if hasattr(data, "as_buffer") else bytes(data[: w * h])
+    return out
+
+
+@_guard("renders_identical_quartz")
+def renders_identical_quartz(reference: Path, built: Path, pages: Collection[int]) -> Check | None:
+    """On a Mac, the pages whose font maps were repaired render exactly alike in Quartz, a second renderer
+    (DESIGN §15.5): one that picked glyphs through ``/ToUnicode`` would draw them differently.
+    None where Quartz isn't available (off a Mac)."""
+    order = sorted(int(p) for p in pages)
+    a = _quartz_gray(Path(reference), order)
+    if a is None:
+        return None
+    b = _quartz_gray(Path(built), order)
+    if b is None:
+        return None
+    differ = [i for i in order if a.get(i) != b.get(i)]
+    if differ:
+        return Check("renders_identical_quartz", False,
+                     f"{_pages_text(differ)} render differently in Quartz", _pg(differ[0]))
+    return Check("renders_identical_quartz", True, f"{len(order)} page(s) identical in Quartz")
+
+
 # --------------------------------------------------------------------------- the suite
 
 
@@ -1133,6 +1267,11 @@ def verify_build(ctx: BuildContext) -> list[Check]:
         checks.extend(text_retention(ctx.built, ctx.expected))
     checks.append(off_page_glyphs(ctx.built, pages=set(ctx.touched) | {int(i) for i in ctx.expected}))
     checks.append(renders_identical(ctx.reference, ctx.built, ctx.turns))
+    if ctx.font_expected:
+        checks.append(fonts_mapped(ctx.built, ctx.font_expected))
+        quartz = renders_identical_quartz(ctx.reference, ctx.built, set(ctx.font_expected))
+        if quartz is not None:
+            checks.append(quartz)
     checks.append(images_identical(ctx.reference, ctx.built, flattened_signatures=copy))
     if ctx.assembled is not None:
         checks.append(passthrough_identical(ctx.built, ctx.assembled))

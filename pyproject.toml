@@ -40,6 +40,7 @@ dependencies = [
   "pillow>=13,<14",
   "pillow-heif>=1.8",
   "py3langid==0.4.0",
+  "pyobjc-framework-Quartz>=13; sys_platform == 'darwin'",
   "pyobjc-framework-Vision>=13; sys_platform == 'darwin'",
   "pypdfium2>=5.14,<6",
   "rapidocr>=3.10,<4",

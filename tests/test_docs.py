@@ -715,7 +715,7 @@ FLOW = ROOT / "src" / "pdfintake" / "flow.py"
 CACHED_STEPS = ("detect", "orientation")
 # The modules that make the work/ folders and the cache in them (flow.py's _cache_folder and _DetectionCache,
 # ocr/pipeline.py's cache records).
-WORK_CODE = ("ocr/pipeline.py", "flow.py")
+WORK_CODE = ("ocr/pipeline.py", "flow.py", "pdf/fontmap.py")
 # Where PRIVACY.md accounts for a file that the cache doesn't keep, by the sentence that says so.
 NOT_CACHED = {
     "run": "A run's own working files are deleted when the run ends",   # in work/, for one run
@@ -738,6 +738,8 @@ WORK_FILE_NAMES: dict[tuple[str, str], str] = {
     ("flow.py", "final.pdf"): "run",
     ("flow.py", "stripped.pdf"): "run",
     ("flow.py", "upright.pdf"): "run",
+    ("flow.py", "fontmapped.pdf"): "run",
+    ("pdf/fontmap.py", "probe-{}.pdf"): "run",
     ("flow.py", "candidate.pdf"): "staged",
     ("flow.py", "{}{}.pdf"): "output",
 }

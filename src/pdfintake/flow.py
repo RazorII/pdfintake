@@ -912,19 +912,27 @@ def _process(d: _Doc) -> None:
 
     from .pdf import classify
 
+    fm = _fontmap(d) if d.kind == "pdf" else None       # §15: proven maps for fonts that have none
+    mapped = bool(fm is not None and fm.changed and not opts.plan_only)
     d.step = "classify"
-    classes = classify.classify(d.source, redo_ocr=opts.redo_ocr, keep_existing_layer=opts.keep_existing_layer)
+    classes = classify.classify(d.source, redo_ocr=opts.redo_ocr, keep_existing_layer=opts.keep_existing_layer,
+                                font_pages=_font_pages(fm))
     rec.input["pages"] = len(classes)
     ocr_pages = [c.index for c in classes if c.needs_ocr]
     adds_layer = bool(ocr_pages)
     for c in classes:
         for code in c.warnings:
             _warn(d, code, c.index + 1)
+    if mapped and fm is not None:
+        for i in fm.pages_repaired:
+            _note(d, "font_map_repaired", i + 1)
+        for i in fm.pages_partial:
+            _warn(d, "font_map_partial", i + 1)
     _step(d, "classify", "ok", pages=len(classes), ocr=len(ocr_pages),
           kinds=dict(sorted(_count(c.kind for c in classes).items())))
 
     d.step = "mode"
-    d.copy_reasons = _copy_reasons(d.reports, opts.provenance, adds_layer)
+    d.copy_reasons = _copy_reasons(d.reports, opts.provenance, adds_layer or mapped)
     copy = bool(d.copy_reasons)
     if copy and opts.overwrite and d.replaces is None:
         raise record.usage_error("copy_never_overwrites")
@@ -933,11 +941,11 @@ def _process(d: _Doc) -> None:
     if opts.plan_only and not adds_layer:
         _plan_record(d, None, None, classes)
         return
-    if copy and not adds_layer and not d.encrypted:
+    if copy and not adds_layer and not mapped and not d.encrypted:
         # The original already reads as it should, and a rewrite would only lose what it carries.
         _done_without_output(d, "nothing_written")
         return
-    if adds_layer and not opts.plan_only:
+    if (adds_layer or mapped) and not opts.plan_only:
         _guard_dest(d, _dest_for(d, _suffix(d, copy, layered=True)), copy)   # fail early, before any OCR
 
     plat = None
@@ -1001,7 +1009,7 @@ def _process(d: _Doc) -> None:
     layer_rep = None
     flattened: list[str] = []
     claims: list[str] = []
-    changed = bool(stripped) or bool(orient_rep is not None and orient_rep.changed)
+    changed = mapped or bool(stripped) or bool(orient_rep is not None and orient_rep.changed)
     built = src
     if layer_input or copy:
         built = d.work / "built.pdf"
@@ -1050,12 +1058,12 @@ def _process(d: _Doc) -> None:
 
     # ---- write or not
     d.step = "decide"
-    suffix = _suffix(d, copy, layered)
-    if d.kind == "pdf" and copy and not layered and not d.encrypted:
+    suffix = _suffix(d, copy, layered or mapped)
+    if d.kind == "pdf" and copy and not layered and not mapped and not d.encrypted:
         # No text came out of the pages, so a copy would add nothing searchable to the original.
         _done_without_output(d, "nothing_written")
         return
-    if d.kind == "pdf" and not copy and not layered:
+    if d.kind == "pdf" and not copy and not layered and not mapped:
         if stripped:
             # An old layer was removed and nothing replaced it: the original keeps more text.
             _done_without_output(d, "nothing_written")
@@ -1072,7 +1080,8 @@ def _process(d: _Doc) -> None:
     ctx = verify.BuildContext(
         reference=d.reference, built=final, turns=turns, touched=frozenset(touched), expected=expected,
         assembled=d.assembled, allowed_meta_changes=frozenset({"XMP"}) if copy else frozenset(),
-        original_sha256=d.seal.sha256[0] if copy else None, original_name=d.inputs[0].name if copy else None)
+        original_sha256=d.seal.sha256[0] if copy else None, original_name=d.inputs[0].name if copy else None,
+        font_expected=dict(fm.expected) if mapped and fm is not None else {})
     checks = verify.verify_build(ctx)
     d.rec.verify = list(checks)
     failed = [c for c in checks if not c.ok]
@@ -1083,7 +1092,7 @@ def _process(d: _Doc) -> None:
 
     d.step = "commit"
     dest = _dest_for(d, suffix)
-    ref = commit(final, dest, d.seal, d.reports or None, d.opts.provenance, adds_layer=adds_layer,
+    ref = commit(final, dest, d.seal, d.reports or None, d.opts.provenance, adds_layer=adds_layer or mapped,
                  inputs=_all_inputs(d), overwrite=d.opts.overwrite, replaces=d.replaces, journal=d.lock)
     d.batch.reserved.add(_fold(ref.path))
     if copy:
@@ -1127,6 +1136,98 @@ def _done_without_output(d: _Doc, code: str) -> None:
     d.rec.output = None
     d.rec.offers = []
     d.rec.status, d.rec.exit = "done", 0
+
+
+def _font_pages(fm: Any) -> dict[int, str]:
+    """page -> ``repaired``, ``partial`` or ``unrepaired`` for classify (§15.1)."""
+    if fm is None:
+        return {}
+    out = {i: "unrepaired" for i in fm.pages_unrepaired}
+    if fm.changed:
+        out.update({i: "partial" for i in fm.pages_partial})
+        out.update({i: "repaired" for i in fm.pages_repaired})
+    else:
+        out.update({i: "unrepaired" for i in (*fm.pages_partial, *fm.pages_repaired)})
+    return out
+
+
+def _fontmap(d: _Doc) -> Any:
+    """The ``fontmap`` step (DESIGN §15): find the fonts whose codes have no map, prove what each glyph
+    draws, and write the maps into a new work copy, which becomes ``d.source``. The reference stays the
+    input, so verify proves no page renders differently."""
+    import pikepdf
+
+    from .pdf import fontmap
+
+    assert d.work is not None and d.source is not None
+    d.step = "fontmap"
+    work = d.work / "fontmap"
+    opts = d.opts
+    try:
+        res, a = fontmap.repair(d.source, work, references=_font_index(), plan_only=opts.plan_only,
+                                read=None if opts.plan_only else (lambda pages: _fontmap_read(d, pages)))
+        if res.changed and not opts.plan_only:
+            dest = d.work / "fontmapped.pdf"
+            with pikepdf.open(d.source) as pdf:
+                fontmap.write(pdf, res)
+                _save_work(pdf, dest)
+            d.source = dest
+    except PdfIntakeError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - a repair that can't run leaves the file as 0.2.0 handled it
+        _step(d, "fontmap", "failed", error=_exc_kind(exc))
+        return None
+    finally:
+        fontmap.cleanup(work)
+    if not a.glyphs:
+        _step(d, "fontmap", "ok", fonts=0)
+        return res
+    _step(d, "fontmap", "changed" if res.changed and not opts.plan_only else "ok",
+          fonts=res.fonts_repaired, fonts_left=res.fonts_left,
+          codes={k: res.codes.get(k, 0) for k in (*fontmap.EVIDENCE_COUNTED, "unproven")},
+          pages=[i + 1 for i in res.pages_repaired], partial=[i + 1 for i in res.pages_partial],
+          unrepaired=[i + 1 for i in res.pages_unrepaired], ocr_pages=[i + 1 for i in res.ocr_pages],
+          planned=bool(opts.plan_only))
+    return res
+
+
+def _exc_kind(exc: BaseException) -> str:
+    name = type(exc).__name__
+    return name if name.isidentifier() and len(name) <= 64 else "error"
+
+
+_FONT_INDEX: list[Any] = []
+
+
+def _font_index() -> Any:
+    """The installed fonts, indexed once per process (§15.2). A seam the tests replace."""
+    from .pdf import fontprog
+
+    if not _FONT_INDEX:
+        _FONT_INDEX.append(fontprog.ReferenceIndex())
+    return _FONT_INDEX[0]
+
+
+def _fontmap_read(d: _Doc, pages: Sequence[int]) -> dict[int, tuple[Any, list[Any]]]:
+    """OCR evidence for the font-map repair: ``pages`` read as ``run`` reads an OCR page (render, pass 1,
+    the language plan, the pack's readers), without thorough mode. Nothing is written to the record but
+    the packs fetched for them."""
+    from .ocr import pipeline
+    from .pdf.classify import PageClass
+
+    assert d.work is not None and d.source is not None
+    plat = d.batch.platform_key()
+    index = d.batch.index()
+    base = d.batch.base()
+    installed = d.batch.installed()
+    classes = [PageClass(i, "image_only", 0, 0, 0.0, 0.0, True, False) for i in sorted(pages)]
+    signals = pipeline.gather(d.source, classes, base, installed, plat, d.work / "fontmap-ocr",
+                              workers=d.opts.workers, osd={}, cache=None)
+    lp = _language_plan(d, signals, index, installed)
+    lp, packs, _fetched, _broken = _ensure_packs(d, lp, index, base, record_step=False)
+    ocr = pipeline.read_pages(signals.pages, lp.pages, packs, base, plat, signals=signals, workers=d.opts.workers)
+    images = {p.index: p for p in signals.pages}
+    return {o.index: (images[o.index], list(o.reads)) for o in ocr if o.index in images}
 
 
 def _count(items: Any) -> dict[str, int]:
@@ -1763,7 +1864,7 @@ def _language_plan(d: _Doc, signals: Any, index: Index, installed: Mapping[str, 
     return langplan.resolve_unsure(lp, index)
 
 
-def _ensure_packs(d: _Doc, lp: LanguagePlan, index: Index, base: InstalledPack
+def _ensure_packs(d: _Doc, lp: LanguagePlan, index: Index, base: InstalledPack, *, record_step: bool = True
                   ) -> tuple[LanguagePlan, dict[str, InstalledPack], list[str], set[str]]:
     """Every pack the plan reads with, ensured; a pack that can't be used this run is broken (§12.3)."""
     from .ocr import langplan
@@ -1799,8 +1900,9 @@ def _ensure_packs(d: _Doc, lp: LanguagePlan, index: Index, base: InstalledPack
         lp = langplan.resolve_unsure(lp, index, broken=broken)
     for _pid in fetched:
         _note(d, "pack_fetched")
-    _step(d, "packs", "changed" if fetched else "ok", used=list(lp.packs_needed), fetched=fetched,
-          broken=sorted(broken))
+    if record_step:
+        _step(d, "packs", "changed" if fetched else "ok", used=list(lp.packs_needed), fetched=fetched,
+              broken=sorted(broken))
     return lp, packs, fetched, broken
 
 

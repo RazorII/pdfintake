@@ -17,6 +17,7 @@ pdfintake's own code is MIT licensed. Nothing below is copied into this reposito
 | `pillow` | MIT-CMU | decoding and, where unavoidable, encoding images |
 | `pillow-heif` | BSD-3-Clause | decoding HEIC photos. That is the licence of its source code; its binary wheels are GPL-2.0, its project says, because they bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0). uv installs it from PyPI on your computer, and this project never redistributes it |
 | `py3langid` | BSD-3-Clause | telling languages apart on Latin-script pages |
+| `pyobjc-framework-Quartz` | MIT | Quartz renders each page whose font map was repaired, a second check that nothing drawn changed (macOS only) |
 | `pyobjc-framework-Vision` | MIT | Apple Vision OCR (macOS only) |
 | `pypdfium2` | Apache-2.0 OR BSD-3-Clause | rendering pages and reading their text and images; its wheels bundle PDFium and the libraries it builds with (FreeType, ICU, Little CMS, libjpeg-turbo, OpenJPEG, libpng, zlib and others), each under its own licence, listed in the wheel |
 | `rapidocr` | Apache-2.0 | text detection, a second OCR reading, and the page-orientation vote |
@@ -44,7 +45,6 @@ pdfintake's own code is MIT licensed. Nothing below is copied into this reposito
 | `pyobjc-core` | MIT | pyobjc-framework-Vision (macOS only) |
 | `pyobjc-framework-Cocoa` | MIT | pyobjc-framework-Vision (macOS only) |
 | `pyobjc-framework-CoreML` | MIT | pyobjc-framework-Vision (macOS only) |
-| `pyobjc-framework-Quartz` | MIT | pyobjc-framework-Vision (macOS only) |
 
 The licences of the native libraries bundled inside the tesserocr, pypdfium2 and opencv-python-headless wheels are being read in full before the first release; this file will list each one.
 

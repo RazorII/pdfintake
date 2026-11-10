@@ -20,6 +20,8 @@
 * Importing any module in ``src/`` touches no network: sockets raise in that interpreter, and any
   attempt (even one the module swallows) fails the test.
 * ``datawheel.py`` imports only the standard library, so it runs from a fresh clone.
+* ``tests/conftest.py`` works in an interpreter that can't import pdfintake (the CI sandbox job's), and
+  still fails when pdfintake is there but its import breaks.
 * The manifest schema refuses a model file name with a code suffix and a ``canary.must_find``
   string with no non-whitespace character, and both validators (the loader's walker and
   ``jsonschema``) apply a ``$ref``'s sibling keywords as well as its target.
@@ -572,6 +574,55 @@ def test_tests_use_a_private_cache(monkeypatch: pytest.MonkeyPatch):
     for root in _default_cache_roots(monkeypatch):
         assert mine != root.resolve() and root.resolve() not in mine.parents, f"tests would use the real cache {root}"
     assert SRC.parent not in mine.parents
+
+
+# --------------------------------------------------------------------------- conftest without pdfintake
+
+CONFTEST_DIR = Path(__file__).resolve().parent
+
+# Loads this folder's conftest.py as a plugin, in an interpreter where importing pdfintake fails the way
+# ``fails_as`` says, and runs one empty test with it (argv: conftest folder, test file, fails_as).
+_CONFTEST_PROBE = r"""
+import importlib.abc, sys
+folder, test_file, fails_as = sys.argv[1:4]
+
+class _Gone(importlib.abc.MetaPathFinder):
+    def find_spec(self, name, path=None, target=None):
+        if name == "pdfintake" or name.startswith("pdfintake."):
+            raise ModuleNotFoundError(f"No module named {fails_as!r}", name=fails_as)
+        return None
+
+for name in [m for m in sys.modules if m == "pdfintake" or m.startswith("pdfintake.")]:
+    del sys.modules[name]
+sys.meta_path.insert(0, _Gone())
+sys.path.insert(0, folder)
+import pytest
+sys.exit(pytest.main(["-p", "conftest", "-p", "no:cacheprovider", "--noconftest", "-q", test_file]))
+"""
+
+
+def _run_conftest_without_pdfintake(tmp_path: Path, fails_as: str) -> subprocess.CompletedProcess:
+    test_file = tmp_path / "test_probe.py"
+    test_file.write_text("def test_probe():\n    pass\n", encoding="utf-8")
+    return subprocess.run([sys.executable, "-c", _CONFTEST_PROBE, str(CONFTEST_DIR), str(test_file), fails_as],
+                          cwd=tmp_path, capture_output=True, text=True, timeout=120)
+
+
+def test_conftest_works_where_pdfintake_cant_be_imported(tmp_path: Path):
+    """The CI sandbox job runs tests/e2e/test_sandbox_smoke.py from an environment that holds only pytest
+    (it drives the installed command), and loads this conftest there: no fixture in it may need pdfintake
+    importable. 2026-11-10: the thorough-mode fixture imported it, and every smoke test failed at setup."""
+    proc = _run_conftest_without_pdfintake(tmp_path, "pdfintake")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "1 passed" in proc.stdout
+
+
+def test_conftest_still_fails_when_pdfintake_is_there_but_breaks(tmp_path: Path):
+    """Only pdfintake's absence is passed over: a pdfintake whose own import fails on a missing dependency
+    still fails the test."""
+    proc = _run_conftest_without_pdfintake(tmp_path, "some_dependency")
+    assert proc.returncode != 0
+    assert "some_dependency" in proc.stdout + proc.stderr
 
 
 # --------------------------------------------------------------------------- the manifest schema's file and canary guards

@@ -123,8 +123,19 @@ def _block_network(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPat
 def _thorough_isolated(monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory):
     """Thorough mode (DESIGN §14) never reads the user's own setting in a test, and no record offers it
     unless the test asks: the offer depends on the machine (Apple silicon), so it would make the same
-    run's record differ between CI runners."""
-    from pdfintake import flow, thorough
+    run's record differ between CI runners.
+
+    The sandbox smoke test runs from an environment that holds only pytest and drives the installed
+    command in its own process (tests/e2e/test_sandbox_smoke.py), so there pdfintake can't be imported
+    and there is nothing in this process to isolate. Only that absence is passed over: a pdfintake that
+    is there but fails to import still fails the test."""
+    try:
+        from pdfintake import flow, thorough
+    except ModuleNotFoundError as exc:
+        if exc.name != "pdfintake":
+            raise
+        yield
+        return
 
     folder = tmp_path_factory.mktemp("thorough-config")
     monkeypatch.setattr(thorough, "setting_path", lambda: folder / thorough.SETTING_FILE)

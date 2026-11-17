@@ -22,6 +22,7 @@ pdfintake and its Claude plugin collect no data.
     - the two orientation checks' results: the turns they weighed, their scores and the name of the writing system they saw, never any text;
     - for a PDF built from images, the date it was first built, and nothing else.
   - a staged smaller copy in `staging/`.
+  - **for `pdfintake text`, nothing.** The text goes only to standard output or the file you name. With `-o FILE` it is built in `staging/` and removed as soon as it is copied to FILE, and the check for fonts without a map works on copies in `work/` that are removed when the command ends. It writes no record.
   - thorough mode's model in `thorough/`, if you turned the mode on.
   - downloaded language packs in `packs/`, with `tessdata/` (the pack files Tesseract reads) and `canary/` (each pack's self-check results, from the pack's own test image, never from your documents).
 

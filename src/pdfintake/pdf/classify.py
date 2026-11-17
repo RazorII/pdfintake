@@ -34,7 +34,7 @@ Classes (DESIGN §2.2, U5):
 from __future__ import annotations
 
 import unicodedata
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -221,13 +221,16 @@ def _decide(index: int, t: _Tally, coverage: float, marker: bool, *, redo_ocr: b
 
 
 def classify(pdf: Path, *, redo_ocr: bool, keep_existing_layer: bool,
-             font_pages: Mapping[int, str] | None = None) -> list[PageClass]:
+             font_pages: Mapping[int, str] | None = None,
+             pages: Collection[int] | None = None) -> list[PageClass]:
     """One ``PageClass`` per page, in page order. ``font_pages`` is the font-map repair's outcome per
-    page (``repaired``, ``partial`` or ``unrepaired``; 0-based keys), empty when it found nothing."""
+    page (``repaired``, ``partial`` or ``unrepaired``; 0-based keys), empty when it found nothing.
+    ``pages`` (0-based) limits the walk to those pages (``pdfintake text --pages``); None is every page."""
     font_pages = font_pages or {}
     out: list[PageClass] = []
     with Renderer(Path(pdf)) as r:
-        for index in range(r.page_count()):
+        count = r.page_count()
+        for index in (range(count) if pages is None else sorted({int(i) for i in pages if 0 <= int(i) < count})):
             with r.pdfium_page(index) as page:
                 tally = _tally(page)
             coverage = r.image_coverage(index)

@@ -1,6 +1,6 @@
 ---
 name: pdfintake
-description: "Turn any PDF or image (scans, phone photos, Preview imports, downloads, email attachments) into a small, searchable PDF with pdfintake: lossless image-to-PDF, an OCR text layer, lossless shrinking, and a smaller copy only when the user asks for one. English is built in, and French, German, Hungarian, Italian, Polish, Portuguese, Spanish, Thai and Vietnamese are language packs, downloaded the first time a document needs one. Runs whole batches without stopping to ask. Use whenever the user wants a scan or photo searchable, several photos combined into one PDF, or a PDF made smaller without losing quality."
+description: "Turn any PDF or image (scans, phone photos, Preview imports, downloads, email attachments) into a small, searchable PDF with pdfintake: lossless image-to-PDF, an OCR text layer, lossless shrinking, and a smaller copy only when the user asks for one. English is built in, and French, German, Hungarian, Italian, Polish, Portuguese, Spanish, Thai and Vietnamese are language packs, downloaded the first time a document needs one. Runs whole batches without stopping to ask. Use whenever the user wants a scan or photo searchable, several photos combined into one PDF, or a PDF made smaller without losing quality. Also gives a PDF's text layer back, page by page (pdfintake text), when the user or a tool wants the text itself."
 ---
 
 # pdfintake: scans and photos to small, searchable PDFs
@@ -9,7 +9,7 @@ pdfintake turns images into an upright PDF without touching their pixels, adds a
 
 **Nothing is asked, before or during a run.** People hand pdfintake big piles of PDFs and want them done in the background. So don't ask questions, don't offer a menu of choices, and don't stop to check "should I…". Read the request, turn the user's own words into flags, run the whole batch, and give **one summary at the end** (section 5). Anything the user might still want (another language for a page, smaller copies, a password for skipped files) goes into that summary as a one-line offer, never as a question that holds anything up. Thorough mode on a Mac with Apple silicon is one of those offers too (section 5).
 
-This skill needs **pdfintake 0.3.0 or newer**. It works wherever you can run shell commands: Claude Code on macOS, Windows or Linux, and claude.ai's own sandbox.
+This skill needs **pdfintake 0.4.0 or newer**. It works wherever you can run shell commands: Claude Code on macOS, Windows or Linux, and claude.ai's own sandbox.
 
 ## 1. Find pdfintake, or install it
 
@@ -18,15 +18,15 @@ uv puts the command in `~/.local/bin`, which often isn't on the shell's PATH. So
 1. `pdfintake --version`
 2. If that's not found: `~/.local/bin/pdfintake --version` (on Windows, `%USERPROFILE%\.local\bin\pdfintake.exe --version`), or `"$(uv tool dir --bin)/pdfintake" --version` when uv is installed.
 
-Use whichever works for everything below. If it reports a version older than 0.3.0, reinstall this release over it: `uv tool install --force git+https://github.com/RazorII/pdfintake@v0.3.0`. A plain `uv tool upgrade` keeps the old pin, so it won't move it.
+Use whichever works for everything below. If it reports a version older than 0.4.0, reinstall this release over it: `uv tool install --force git+https://github.com/RazorII/pdfintake@v0.4.0`. A plain `uv tool upgrade` keeps the old pin, so it won't move it.
 
 Only if none of them works, install this release:
 
 ```
-uv tool install git+https://github.com/RazorII/pdfintake@v0.3.0
+uv tool install git+https://github.com/RazorII/pdfintake@v0.4.0
 ```
 
-Use uv. pipx or pip work only with an explicit Python 3.11 to 3.14 interpreter (`pipx install --python python3.12 git+https://github.com/RazorII/pdfintake@v0.3.0`). In claude.ai, always use uv: its Python refuses pip with "externally-managed-environment".
+Use uv. pipx or pip work only with an explicit Python 3.11 to 3.14 interpreter (`pipx install --python python3.12 git+https://github.com/RazorII/pdfintake@v0.4.0`). In claude.ai, always use uv: its Python refuses pip with "externally-managed-environment".
 
 Then run `pdfintake doctor --json` once per environment. Exit 3 means something it needs is missing or broken; the JSON names it. Tell the user plainly. If a download failed, say that an organisation's network setting may block package downloads (from github.com or files.pythonhosted.org), and that nothing can be converted until it's allowed.
 
@@ -115,7 +115,7 @@ Short, plain and in this order. Leave out any part with nothing in it.
 3. **Language**, one line per file: pages read with an uncertain language (`language_uncertain`), or in a language with no pack yet (`no_pack_for_language`, `pack_not_installed`, `pack_broken`). Use the offer's `summary` from the record. When a language has no pack, say once that anyone can add one (the repository's `docs/add-a-language.md`).
 4. **Smaller copies**, in one line, when records carry a `smaller` offer: "12 files could be made about 60% smaller (180 MB to 70 MB in all); ask if you want smaller copies."
 5. **Thorough mode**, when a record carries a `thorough` offer (a Mac with Apple silicon where the user hasn't decided yet), once per conversation: give the offer's `summary` in its own words (what the mode needs, what it costs, what it gives), and say that you can set it up, or that a "no thanks" stops the offer for good. Nothing waits on it. Then, only on the user's word:
-   - **Yes:** install the libraries with `uv tool install --reinstall 'pdfintake[thorough] @ git+https://github.com/RazorII/pdfintake@v0.3.0'`, then run `pdfintake thorough enable --json`. It downloads 4.4 GB and reads a test page, so it can take several minutes; say so, and run it in the background if you can. Exit 3 means it couldn't (the JSON's `error.message` says why: no room, a blocked download, a failed test read); report that and stop. When it worked, say in one line that this batch can be read again in thorough mode.
+   - **Yes:** install the libraries with `uv tool install --reinstall 'pdfintake[thorough] @ git+https://github.com/RazorII/pdfintake@v0.4.0'`, then run `pdfintake thorough enable --json`. It downloads 4.4 GB and reads a test page, so it can take several minutes; say so, and run it in the background if you can. Exit 3 means it couldn't (the JSON's `error.message` says why: no room, a blocked download, a failed test read); report that and stop. When it worked, say in one line that this batch can be read again in thorough mode.
    - **No:** run `pdfintake thorough decline --json`, and don't bring it up again. The user can still turn it on later with `pdfintake thorough enable`.
    - **Nothing said** (they moved on): leave it; later batches' records keep offering it.
 
@@ -216,6 +216,9 @@ Every warning goes to the user. Explain it in a few plain words; the record's `m
 **Exports** (section 7):
 - `exporting_a_copy`: the export was made from a searchable copy, not from the original. Where it matters, the original is the one that counts, and for evidence the original is what goes out.
 
+**Text** (section 8):
+- `no_text_layer`: the PDF's pages are pictures with no text layer, so `pdfintake text` has no text to give. Offer to make it searchable with `pdfintake run`, then read the text from the new file.
+
 ### Notes
 
 One closing line for all of them, except `copy_unlocked`, `signature_not_carried` and `skipped_no_password`, which have their own places in the summary (section 5):
@@ -252,6 +255,20 @@ The code is in the failed step of that file's record, or in `error.code` when th
 - A searchable copy can be exported, with the provenance its original had: a copy of a file from the other side or of an evidence original is refused like the original. The export carries the warning `exporting_a_copy`; say that it was made from the copy, not the original.
 - An export's other warnings are worded in the result; pass each one on: `inline_jpeg_metadata_kept` (small JPEGs stored inside the page content keep their own metadata), `jpx_metadata_kept` (JPEG 2000 images keep theirs), `embedded_files_kept` (attachments keep theirs), `annotation_authors_kept` (comments still name their author), `optional_content_kept` (hidden layers stay in), `appearances_generated` (some form fields had no look of their own, so one was drawn before flattening), `annotations_not_shown_dropped` (hidden or print-only annotations aren't in the flattened copy), `conformance_claim_dropped` (removing the metadata drops a PDF/A or PDF/UA claim) and `input_repaired`.
 - Signing or certifying a PDF isn't in this version. Say so if asked.
+
+## 8. The text of a PDF, only when asked
+
+When the user (or a tool they're building) wants a PDF's text itself rather than a searchable file, run:
+
+```
+pdfintake text 'FILE' --format txt
+```
+
+It prints the text layer the PDF already has, each page followed by a form feed, and never reads a page with OCR. Leave out `--format txt` for JSON lines (a header, then one line per page with `text`, `layer` and `flags`), and add `-o 'OUT' --json` to write a file instead and get a summary of counts. When the PDF came from a `run` in this conversation, add `--record <record id>`: the text then carries that run's languages and warnings.
+
+- A page with `layer: "none"` and the flag `no_text_layer` has no text yet; when every page is like that, run `pdfintake run` on the file first (section 2) and read the text from its output.
+- An image is refused (exit 2, `unsupported_input`): run `pdfintake run` on it, then `text` on the PDF. A PDF that needs a password is refused (exit 4, `encrypted`): read the searchable copy `run` made of it instead.
+- Pass on any page flags in one line each (section 6's warnings explain them). Show the user only as much of the text as they asked for.
 
 ## Don't
 

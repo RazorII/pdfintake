@@ -1,6 +1,6 @@
 # The decision record
 
-Every `pdfintake run` and `pdfintake apply` writes one **record** per output document. The record is the only interface between the CLI and anything that drives it, the Claude skill included. This page describes record version 1. The code that writes and checks it is `src/pdfintake/record.py`.
+Every `pdfintake run` and `pdfintake apply` writes one **record** per output document. The record is the only interface between the CLI and anything that drives it, the Claude skill included. This page describes record version 1. The code that writes and checks it is `src/pdfintake/record.py`. `pdfintake text`, which gives a PDF's text layer back, writes no record; its output is described at the end ([pdfintake text](#pdfintake-text)).
 
 **A run never waits for an answer.** pdfintake doesn't ask anything during a run, and no record holds a question. Every choice comes from the flags the run was given or a default. What a person might still want to do afterwards (read a page again with another language, save a smaller copy) is listed in the record's `offers`, to report once after the whole batch. Nothing has to be done about an offer for a run to finish, and `run` never exits 10.
 
@@ -12,7 +12,7 @@ Every `pdfintake run` and `pdfintake apply` writes one **record** per output doc
 
 ## Five rules
 
-1. **A record never holds document text.** It holds counts, hashes, scores, codes and paths, never what a page says. OCR results are reduced to counts before they reach a record, and `record.validate` refuses any object key named `text`, `lines`, `words`, `near` or ending in `_text` anywhere in it. Characters left out of a text layer are named as code points (`"dropped": {"U+4E2D": 1}`), never as the characters themselves. File paths are kept (PRIVACY.md says so).
+1. **A record never holds document text.** It holds counts, hashes, scores, codes and paths, never what a page says. OCR results are reduced to counts before they reach a record, and `record.validate` refuses any object key named `text`, `lines`, `words`, `near` or ending in `_text` anywhere in it. Characters left out of a text layer are named as code points (`"dropped": {"U+4E2D": 1}`), never as the characters themselves. File paths are kept (PRIVACY.md says so). `pdfintake text` writes no record at all: the text it reads goes only to its standard output or to the file its caller names.
 2. **Every vocabulary is closed.** Statuses, offer kinds, apply flags, option ids, output kinds, copy reasons, warning codes, note codes and usage codes come from fixed tables in core. A new code is a core change, never something a language pack can add.
 3. **An offer is acted on with ids only.** If a person asks for it later, an offer is acted on with
 
@@ -177,6 +177,7 @@ A warning is something the user should hear about. Show every one, always; a deg
 | orientation | `orientation_disagree`, `not_turned_annotations` |
 | input | `input_repaired`, `contains_jbig2`, `revisions_dropped`, `objects_dropped`, `render_capped`, `metadata_format_limit` |
 | export | `exporting_a_copy` (export only: the export was made from a searchable copy, not from the original) |
+| text | `no_text_layer` (`pdfintake text` only, never in a record: pages with pictures but no text layer; run `pdfintake run` first) |
 
 `layer_dropped_chars` reads "Some characters couldn't be written into the text layer." It counts characters with no glyph in the layer's fonts and characters of lines whose box couldn't be placed.
 
@@ -256,6 +257,35 @@ A finished record with a `smaller` offer (made-up values, shortened):
 ```
 
 The run is finished as it stands. If the person later asks for the smaller copy, the command is `pdfintake apply r-20261105-1a2b3c4d --choice smaller --json`.
+
+## pdfintake text
+
+`pdfintake text INPUT [-o FILE|-] [--format jsonl|txt] [--pages N|N-M] [--record RECORD-ID] [--overwrite] [--json]` gives the text layer a PDF already has, one page at a time, so a search index or a script never has to extract it itself. It reads each page's text from its CropBox exactly as `verify`'s `text_retention` check does after every build, so what it gives is what pdfintake verified. **It never reads a page with OCR, never changes or writes a PDF, and writes no record.**
+
+**JSON lines** (`--format jsonl`, the default): one header line, then one line per page of the range, in order.
+
+```jsonl
+{"format": "pdfintake-text", "format_version": 1, "source_sha256": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1", "tool_version": "0.4.0", "pages": 3, "range": [1, 3], "producer": {"tool": "pdfintake", "tool_version": "0.4.0", "route": "layer", "engines": {"pdfium": "156.0.8076.0", "pypdfium2": "5.14.0"}, "packs": []}, "layers": {"pdfintake": 2, "other": 0, "none": 1}, "font_maps": "record", "warnings": [], "record": {"id": "r-20261105-1a2b3c4d", "tool": {"version": "0.4.0", "platform": "darwin-arm64", "os": "macOS 15.4", "python": "3.12.7", "engines": {"tesseract": "5.5.3 (tesserocr 2.12.0)", "vision": "rev3 (macOS 15.4)", "rapidocr": "3.10.0"}}, "language": {"plan": "confident", "packs": [{"id": "de", "version": "1.0.0"}]}}}
+{"page": 1, "text": "Rechnung Nr. 555-0123\nJane Doe", "chars": 30, "layer": "pdfintake", "flags": [], "lang": ["de"], "lang_basis": "detected", "pack": "de"}
+{"page": 2, "text": "Seite 2", "chars": 7, "layer": "pdfintake", "flags": ["agreement_low"], "lang": ["de"], "lang_basis": "detected", "pack": "de"}
+{"page": 3, "text": "", "chars": 0, "layer": "none", "flags": [], "lang": null, "lang_basis": null, "pack": null}
+```
+
+- `source_sha256` is the SHA-256 of the PDF as read; the file is sealed before the read and checked again after it. `pages` is the document's page count and `range` the pages exported (from 1, inclusive). `producer` names what turned the PDF's bytes into this text: pdfintake's version, the `layer` route and the pdfium build.
+- `text` is pdfium's text with line breaks as `\n`, pdfium's mark for a hyphen that ends a line written back as `-` and a line break, any lone surrogate as U+FFFD, and the whole in NFC. `chars` is its length. A page with no non-space character has `text` `""`.
+- `layer` is `pdfintake` for a layer pdfintake wrote, `other` for any other text (the document's own, or another tool's invisible layer) and `none` for a page with no text.
+- `flags` lists, in this order, the codes from `record.TEXT_FLAGS` that say the page's text may be missing or wrong. From the PDF itself: `no_text_layer` (pictures, no text), `garbled_text` (letters whose font has no map to text, so they read as something else) and `image_text_not_read` (printed text over pictures, which weren't read). With `--record`: `font_map_partial`, and these warnings when that run reported them on the page: `layer_dropped_chars`, `agreement_low`, `fallback_used`, `no_layer_readers_failed`, `language_uncertain`, `no_pack_for_language`, `pack_not_installed`, `pack_broken`, `mixed_language_page`, `mixed_script_no_pack`, `orientation_disagree`, `not_turned_annotations`, `render_capped`. Their meanings are the warnings' above.
+- `font_maps` says what decided which pages' fonts lack maps: `record` (the run's `fontmap` step), `checked` (without a record, `text` runs the check `run` starts its repair from; every page it finds is `garbled_text`, because a partial repair can't be told apart in the file, so `font_map_partial` needs the record) or `failed` (the check couldn't run on this file, and `garbled_text` then comes from the share of unreadable characters alone).
+- `lang`, `lang_basis` and `pack` come from the record for each page that run read with OCR (`lang_basis`: `forced`, `hinted` or `detected`), and are `null` otherwise.
+- `warnings` holds `no_text_layer` (as `{code, message, page}`) when no exported page has text and at least one has pictures: the PDF needs `pdfintake run` first. A PDF of blank pages gets no warning.
+
+**Plain text** (`--format txt`): each page's text, ending in a line break when it has any, then a form feed (`\f`), as pdftotext writes it, so page N of the range is the Nth piece of a split on `\f`.
+
+**`--record RECORD-ID`** names the `run` that wrote this PDF. The record's `output.sha256` must be the PDF's, or `text` stops with exit 5 (`record_mismatch`). Its `tool`, its packs, each OCR'd page's languages and pack, its font-map outcome and its page warnings are then added.
+
+**Where the text goes.** Standard output by default (`-o -` too), written only after every check has passed. `-o FILE` writes the export to a file the caller names, built in the cache and copied there by the same writer `run` uses: never over an existing file without `--overwrite`, never onto the input, never into the cache. `--json` turns an error into one JSON object on standard output; with `-o FILE` it also prints a summary on success: `input` (path, SHA-256, pages), `range`, `format`, `output` (path, SHA-256, bytes), `layers`, `font_maps`, `flags` (each code with its page numbers), `warnings`, `record` and `notes`. The summary never holds text. Without `--json`, warnings go to standard error when the text goes to standard output.
+
+**Exits:** 0 done, including a PDF without a text layer; 1 an unexpected error (its message names only the kind of error, never a page's text); 2 usage: an input that is missing (`input_missing`), isn't a regular file (`input_not_file`), or is an image or not a PDF at all (`unsupported_input`: an image becomes a PDF with `pdfintake run`), a page range the PDF doesn't have (`bad_pages`), an output that exists (`output_exists`) or would be the input, a bad or unknown record id; 4 refused: the PDF needs a password to open (`encrypted`: `run` writes a searchable copy without one when a saved password opens it) or can't be read as a PDF (`damaged`); 5 stale: the PDF isn't the record's output (`record_mismatch`), or it changed while it was read (`input_changed`).
 
 ## Compatibility
 

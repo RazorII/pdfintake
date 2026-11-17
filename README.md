@@ -16,6 +16,7 @@ pdfintake run 'Receipt.pdf'
 - **Every build is checked before it's written**: each page renders the same as the input, every image is identical, the text layer is all there and on the page, and the file's structure is sound. If any check fails, nothing is written.
 - **The input is never modified.** pdfintake fingerprints it before it starts and checks it again before it writes.
 - **A run never stops to ask.** Every choice comes from a flag or a default, so a batch of hundreds of files runs in the background and finishes.
+- **The text comes back out, page by page** (`pdfintake text`), for a search index, a script or `grep`: exactly the layer pdfintake verified, with each page's languages and anything that makes its text doubtful.
 
 English is built in, and French, German, Hungarian, Italian, Polish, Portuguese, Spanish, Thai and Vietnamese are language packs, downloaded the first time a document needs one. Anyone can add a language with the kit in this repo ([docs/add-a-language.md](docs/add-a-language.md)).
 
@@ -68,6 +69,7 @@ pdfintake doctor --canary                                # test every engine on 
 pdfintake packs list                                     # language packs, installed or available
 pdfintake record show r-20261105-1a2b3c4d                # a saved record again
 pdfintake export clean 'scan (searchable).pdf' -o 'share.pdf' --provenance ordinary
+pdfintake text 'scan (searchable).pdf'                   # its text layer, one JSON line per page
 pdfintake --version
 ```
 
@@ -110,16 +112,38 @@ Some originals must stay exactly as they are: papers from the other side of a de
 
 XFA forms are still refused, because their pages are drawn only when they're viewed, and so is a file the two independent detectors disagree about, or one too damaged to check (`damaged`: it won't open, it was cut short, or it couldn't be read through after a repair). A file that only needed a small repair is processed, with a warning.
 
+### Getting the text back out
+
+`pdfintake text` gives the text layer a PDF already has, one page at a time, for a search index, a script or `grep`. It reads each page the way pdfintake checks every file it writes, so the text is what was verified. It never reads a page with OCR, never changes the PDF and stores nothing: a scan without a text layer gets one from `pdfintake run` first.
+
+```
+pdfintake text 'scan (searchable).pdf'                                   # JSON lines on standard output
+pdfintake text 'scan (searchable).pdf' --format txt | grep -i 'invoice'  # plain text
+pdfintake text 'scan (searchable).pdf' --pages 2-5                      # some pages only
+pdfintake text 'scan (searchable).pdf' -o 'scan.jsonl' --json           # to a file, with a summary
+pdfintake text 'scan (searchable).pdf' --record r-20261105-1a2b3c4d     # adds that run's languages and warnings
+```
+
+- **JSON lines** (the default): a header line, then one line per page, such as `{"page": 1, "text": "…", "chars": 812, "layer": "pdfintake", "flags": [], "lang": ["de"], "lang_basis": "detected", "pack": "de"}`. The header holds the PDF's SHA-256, its page count, the range, pdfintake's version and what read the text (`producer`).
+- **`layer`** says where a page's text comes from: `pdfintake` (a layer pdfintake wrote), `other` (the document's own text, or another tool's invisible layer) or `none`.
+- **`flags`** say a page's text may be missing or wrong: `no_text_layer` (pictures but no text; run `pdfintake run`), `garbled_text` (letters whose font has no map, so they read as something else), `image_text_not_read` (printed text over pictures pdfintake didn't read), and with `--record`, `font_map_partial` and that run's warnings about the page, such as `layer_dropped_chars` or `language_uncertain`.
+- **Plain text** (`--format txt`) ends every page with a form feed, as pdftotext does, so page N is the Nth piece.
+- **`--record ID`** names the `run` that wrote this PDF. Its output must be this exact file (exit 5 otherwise); its languages, packs and page warnings are then added.
+- **`-o FILE`** writes a file instead of standard output, never over an existing one without `--overwrite`; with `--json` you get a summary of counts, never the text. With the text on standard output, `--json` turns an error into one JSON object.
+- An image is refused (exit 2): `pdfintake run` makes a PDF of it, and `text` reads that. A PDF that needs a password is refused (exit 4, `encrypted`): the searchable copy `run` makes has none.
+
+Every field is in [docs/decision-record.md](docs/decision-record.md#pdfintake-text).
+
 ### Exit codes
 
 | Exit code | Meaning |
 |---|---|
 | 0 | Done (read the warnings and offers anyway), including a file skipped because no saved password opened it |
 | 1 | A file failed, including a failed check or an input pdfintake can't place without losing data |
-| 2 | Bad arguments, an output that exists or would hit an input, mixed PDFs and images, an input that is missing or isn't a regular file (`input_not_file`: a folder, a pipe or a device), `--overwrite` for a searchable copy (`copy_never_overwrites`), an output open in another program on Windows (`output_in_use`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`); for `apply`, an unknown record or a flag that doesn't fit the offer |
+| 2 | Bad arguments, an output that exists or would hit an input, mixed PDFs and images, an input that is missing or isn't a regular file (`input_not_file`: a folder, a pipe or a device), `--overwrite` for a searchable copy (`copy_never_overwrites`), an output open in another program on Windows (`output_in_use`), a saved passwords file pdfintake won't use (`passwords_file_unsafe`); for `apply`, an unknown record or a flag that doesn't fit the offer; for `text`, an image or anything else that isn't a PDF (`unsupported_input`), a page range the PDF doesn't have (`bad_pages`) or an unknown record |
 | 3 | Setup: the English data missing or broken, an unsupported platform, a broken model; for `pdfintake thorough enable`, a machine that can't run it, its libraries missing, no room, or a failed download or test read; for `apply --choice thorough`, thorough mode not set up yet (`thorough_not_ready`) |
-| 4 | Refused, nothing written: for `run`, an XFA form, metadata that can't be read, a damaged file, or one the two detectors disagree about; for `apply --choice smaller`, the same checks on the original again, or a file kept as a searchable copy, which never gets a smaller version (`no_smaller_for_a_copy`) |
-| 5 | Stale: the input changed during the run, or since the record |
+| 4 | Refused, nothing written: for `run`, an XFA form, metadata that can't be read, a damaged file, or one the two detectors disagree about; for `apply --choice smaller`, the same checks on the original again, or a file kept as a searchable copy, which never gets a smaller version (`no_smaller_for_a_copy`); for `text`, a PDF that needs a password (`encrypted`) or can't be read (`damaged`) |
+| 5 | Stale: the input changed during the run, or since the record; for `text --record`, a PDF that isn't that record's output (`record_mismatch`) |
 | 6 | Kit only: a must-survive or metric floor failed |
 | 7 | Kit only: the re-bench differs from the pack's claim beyond tolerance |
 | 8 | Kit only: the privacy guard tripped in `kit private` |

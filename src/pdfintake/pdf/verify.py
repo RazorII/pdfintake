@@ -38,7 +38,7 @@ import re
 import sys
 import unicodedata
 from collections import Counter
-from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -211,6 +211,30 @@ def _sha(data: bytes) -> str:
 # --------------------------------------------------------------------------- text
 
 
+def layer_text(path: Path, pages: Iterable[int] | None = None) -> tuple[int, dict[int, str]]:
+    """The text pdfium hands back from each page's CropBox: ``(page count, {index: text})``.
+
+    ``pages`` are 0-based; only those the document has are read (every page when None). The text is
+    as pdfium gives it. This is the one read of a layer: ``text_retention`` checks it and ``pdfintake
+    text`` (``pdf/layertext.py``) exports it, so what a caller gets is what verify checked.
+    """
+    with _lock(), _pdfium(Path(path)) as doc:
+        count = len(doc)
+        wanted = range(count) if pages is None else sorted({int(i) for i in pages if 0 <= int(i) < count})
+        out: dict[int, str] = {}
+        for i in wanted:
+            page = doc[i]
+            try:
+                textpage = page.get_textpage()
+                try:
+                    out[i] = textpage.get_text_bounded(*page.get_cropbox())
+                finally:
+                    textpage.close()
+            finally:
+                page.close()
+    return count, out
+
+
 @_guard("text_retention")
 def text_retention(built: Path, expected: Mapping[int, str]) -> list[Check]:
     """The layer text pdfium hands back from each page's CropBox, against what was written.
@@ -223,25 +247,16 @@ def text_retention(built: Path, expected: Mapping[int, str]) -> list[Check]:
     pages = sorted(expected)
     per_page: dict[int, tuple[int, int]] = {}
     missing: list[int] = []
-    with _lock(), _pdfium(Path(built)) as doc:
-        count = len(doc)
-        for i in pages:
-            want = _norm_chars(expected[i])
-            total = sum(want.values())
-            if not 0 <= i < count:
-                missing.append(i)
-                per_page[i] = (0, total)
-                continue
-            page = doc[i]
-            try:
-                textpage = page.get_textpage()
-                try:
-                    got = _norm_chars(textpage.get_text_bounded(*page.get_cropbox()))
-                finally:
-                    textpage.close()
-            finally:
-                page.close()
-            per_page[i] = (sum((want & got).values()), total)
+    _count, read = layer_text(Path(built), pages)
+    for i in pages:
+        want = _norm_chars(expected[i])
+        total = sum(want.values())
+        if i not in read:
+            missing.append(i)
+            per_page[i] = (0, total)
+            continue
+        got = _norm_chars(read[i])
+        per_page[i] = (sum((want & got).values()), total)
 
     total_all = sum(t for _k, t in per_page.values())
     if total_all == 0:

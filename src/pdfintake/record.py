@@ -120,8 +120,21 @@ WARNING_GROUPS: Mapping[str, tuple[str, ...]] = {
     "input": ("input_repaired", "contains_jbig2", "revisions_dropped", "objects_dropped", "render_capped",
               "metadata_format_limit"),
     "export": ("exporting_a_copy",),                    # §11.1: export only, an export made from a searchable copy
+    # `pdfintake text` only (DESIGN §16): the PDF's pages have pictures but no text layer, so `run` it first.
+    # A `text` export never writes a record, so this code never reaches one.
+    "text": ("no_text_layer",),
 }
 WARNING_CODES: frozenset[str] = frozenset(code for group in WARNING_GROUPS.values() for code in group)
+# The codes a `pdfintake text` page line may carry in its `flags` (DESIGN §16), in this order. Each
+# says the page's text may be missing or wrong. `no_text_layer` and classify's three come from the
+# PDF itself; the rest are copied from the `--record` page they were reported on.
+TEXT_FLAGS: tuple[str, ...] = (
+    "no_text_layer", "garbled_text", "font_map_partial", "image_text_not_read",
+    "layer_dropped_chars", "agreement_low", "fallback_used", "no_layer_readers_failed",
+    "language_uncertain", "no_pack_for_language", "pack_not_installed", "pack_broken",
+    "mixed_language_page", "mixed_script_no_pack", "orientation_disagree", "not_turned_annotations",
+    "render_capped",
+)
 NOTE_CODES: frozenset[str] = frozenset({"input_unchanged", "nothing_written", "vision_not_on_platform",
                                          "pack_fetched", "mixed_script_unchecked", "rotate_kept",
                                          # §10.2, §11.1: copy mode; §12.1: no saved password opened it
@@ -172,6 +185,8 @@ WARNING_MESSAGES: Mapping[str, str] = {
     "render_capped": "This page is very large, so it was read at a lower resolution.",
     "metadata_format_limit": "Some metadata couldn't be carried over exactly in the new file's format.",
     "exporting_a_copy": "This export was made from a searchable copy, not from the original. For evidence, the original is what goes out.",
+    "no_text_layer": ("This PDF has pages with pictures but no text layer, so they have no text to give. Run "
+                      "pdfintake run on it to make a searchable PDF, then pdfintake text on that PDF."),
 }
 NOTE_MESSAGES: Mapping[str, str] = {
     "input_unchanged": "The input file was not modified.",

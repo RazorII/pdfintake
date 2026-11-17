@@ -30,6 +30,7 @@ You're helping someone contribute to pdfintake: a command that turns scans, phon
 - Use a real password anywhere, or let one reach argv, the environment, a record, a log or an error message. Test passwords are invented strings in fixtures. pdfintake reads passwords only from a saved, private passwords file, and never touches a keychain or password manager.
 - Start a process from `src/` (`subprocess`, `os.system`, `os.popen`, `multiprocessing`), or import PyMuPDF.
 - Hand-edit `src/pdfintake/langpacks/index.json`, `tools/published-packs.json` or `src/pdfintake/ocr/calibration.json`. They're generated: `index.json` by `tools/build_index.py`, `published-packs.json` by `scripts/release.sh` (through `tools/build_index.py --record-release`), `calibration.json` by the maintainer's kit measurement. Don't change `tools/canary-env.txt` either: the maintainer owns it, and it pins the exact library versions every canary is drawn with.
+- Print, log or record a page's text from `pdfintake text` anywhere but its standard output or the `-o` file, or let `text` read a page with OCR. It gives the layer a PDF already has; a PDF without one gets it from `run`.
 - Push, tag, release or publish anything. The person and the maintainer do that.
 
 ## Run the tests

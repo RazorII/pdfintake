@@ -39,6 +39,7 @@ SPEC_WARNINGS = {
     "language_uncertain", "no_pack_for_language", "pack_not_installed",                # §12.3
     "thorough_failed", "thorough_unavailable",                                        # §14
     "font_map_partial",                                                               # §15
+    "no_text_layer",                                     # §16, `pdfintake text` only, never in a record
 }
 SPEC_NOTES = {"input_unchanged", "nothing_written", "vision_not_on_platform", "pack_fetched",
               "mixed_script_unchecked", "rotate_kept",

@@ -14,6 +14,8 @@ Commands (DESIGN §4.1 as changed by §10-§12)::
     pdfintake record show RECORD-ID [--json]
     pdfintake export clean INPUT -o OUT --provenance VALUE [--strip-dates] [--overwrite] [--json]
     pdfintake export flatten INPUT -o OUT --provenance VALUE [--overwrite] [--json]
+    pdfintake text INPUT [-o FILE|-] [--format jsonl|txt] [--pages N|N-M] [--record RECORD-ID]
+                   [--overwrite] [--json]
     pdfintake passwords add --from-file FILE [--passwords-file FILE] [--json]
     pdfintake kit ...                       (needs pdfintake[kit])
     pdfintake --version
@@ -28,7 +30,10 @@ is never read, even as ``-``.
 records ``flow`` saved, unchanged); an invocation that can't run at all adds ``"error": {code,
 message}`` with no records. The other commands print one JSON object with ``exit`` and their result,
 or ``exit`` and ``error``. Without ``--json`` a short human summary goes to standard output and
-errors to standard error. Output is UTF-8 everywhere (``fsutil.utf8_stdio``), so a file name in a
+errors to standard error. ``text`` is the one command whose standard output can be a document's
+text (DESIGN §16): JSON lines or plain text, written only after every check has passed; with
+``--json`` an error is one JSON object instead, and with ``-o FILE`` the summary is (counts and
+codes, never text). Output is UTF-8 everywhere (``fsutil.utf8_stdio``), so a file name in a
 script the console's code page lacks can't crash a run piped through cp1252.
 
 **Exit codes** are the ``EXIT_*`` constants in ``errors.py``: 0 done, 1 failed, 2 usage, 3 setup,
@@ -40,8 +45,8 @@ list in the config folder. ``passwords add --from-file`` appends to that list. A
 an argument value, never read from the environment or standard input, and never printed.
 
 **Writes.** This module writes nothing itself. ``run`` and ``apply`` write through ``flow``;
-``export`` builds into the cache and hands the file to ``flow.commit``, the one writer into a
-user's folder (tests/test_write_paths.py checks both).
+``export`` and ``text -o FILE`` build into the cache and hand the file to ``flow.commit``, the one
+writer into a user's folder (tests/test_write_paths.py checks both).
 """
 
 from __future__ import annotations
@@ -228,6 +233,25 @@ def build_parser() -> argparse.ArgumentParser:
         q.add_argument("--overwrite", action="store_true", help="replace OUT when it already exists")
         q.add_argument("--json", action="store_true")
         q.set_defaults(func=_cmd_export)
+
+    # text -----------------------------------------------------------------------------------------
+    p = sub.add_parser("text", help="print a PDF's text layer, page by page (never reads a page with OCR)",
+                       description="Print the text layer a PDF already has, one page at a time: JSON lines "
+                                   "(a header, then one line per page) or plain text with a form feed after each "
+                                   "page. It never reads a page with OCR and never changes the PDF; a PDF without "
+                                   "a text layer gets one from 'pdfintake run'.")
+    p.add_argument("input", metavar="INPUT", help="a PDF")
+    p.add_argument("-o", "--out", metavar="FILE",
+                   help="write the text to FILE instead of standard output ('-' is standard output)")
+    p.add_argument("--format", choices=("jsonl", "txt"), default="jsonl",
+                   help="jsonl: a header line, then one JSON line per page (default); txt: plain text")
+    p.add_argument("--pages", metavar="N|N-M", help="only these pages, counting from 1")
+    p.add_argument("--record", metavar="RECORD-ID",
+                   help="the run that wrote this PDF: its languages, packs and page warnings are added")
+    p.add_argument("--overwrite", action="store_true", help="replace FILE when it already exists")
+    p.add_argument("--json", action="store_true",
+                   help="errors as one JSON object; with --out FILE, a JSON summary (counts, never text)")
+    p.set_defaults(func=_cmd_text)
 
     # thorough -------------------------------------------------------------------------------------
     p = sub.add_parser("thorough", help="thorough mode: dots.mocr beside the regular readers (Apple silicon)",
@@ -812,6 +836,74 @@ def _cmd_export(args: argparse.Namespace) -> int:
         _emit(out)
     else:
         _say(f"export {kind}: {_shown(src.name)} -> {_shown(ref.path)} [{_size(ref.bytes)}]")
+        for w in warnings:
+            _say(f"  warning {w['code']}: {w['message']}")
+    return EXIT_OK
+
+
+# --------------------------------------------------------------------------- text
+
+def _cmd_text(args: argparse.Namespace) -> int:
+    """A PDF's text layer to standard output or to ``-o FILE`` (through ``flow.commit``); DESIGN §16.
+
+    Every check (the input, the record, the page range, the seal) runs before the first byte of
+    text, so a failure is still one error object under ``--json``. Nothing printed here except the
+    text itself ever holds a page's text.
+    """
+    to_stdout = args.out is None or args.out == "-"
+    ref = None
+    try:
+        from . import flow, fsutil, integrity
+        from .pdf import layertext
+
+        src = Path(os.path.abspath(Path(args.input).expanduser()))
+        dest = None if to_stdout else Path(os.path.abspath(Path(args.out).expanduser()))
+        pages = layertext.parse_pages(args.pages)
+        if dest is not None:
+            fsutil.guard_output([src], dest, overwrite=bool(args.overwrite))   # exit 2 before any work
+        with integrity.no_subprocess():
+            exp = layertext.read(src, pages=pages, record_id=args.record)
+            if dest is not None:
+                staging = fsutil.work_dir("staging", f"text-{secrets.token_hex(6)}")
+                try:
+                    built = layertext.stage(exp, args.format, staging)
+                    ref = flow.commit(built, dest, exp.seal, None, "ordinary", adds_layer=False, inputs=[src],
+                                      overwrite=bool(args.overwrite))
+                finally:
+                    fsutil.prune(staging, older_than_days=0)   # the built text; the empty folder goes with the next prune
+    except PdfIntakeError as exc:
+        return _fail(args, exc)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as exc:                             # noqa: BLE001
+        return _unexpected(args, exc)
+    warnings = exp.warning_messages()
+    if to_stdout:
+        try:
+            for chunk in layertext.chunks(exp, args.format):
+                sys.stdout.write(chunk)
+            sys.stdout.flush()
+        except BrokenPipeError:                          # the reader stopped early (head, grep -q)
+            try:
+                sys.stdout.close()
+            except OSError:
+                pass
+            return EXIT_FAILED
+        if not args.json:
+            for w in warnings:
+                _err(f"warning {w['code']}: {w['message']}")
+        return EXIT_OK
+    assert ref is not None
+    layers = exp.layers()
+    if args.json:
+        _emit({"exit": EXIT_OK, "input": {"path": str(src), "sha256": exp.source_sha256, "pages": exp.pages},
+               "range": [exp.first, exp.last], "format": args.format,
+               "output": {"path": str(ref.path), "sha256": ref.sha256, "bytes": ref.bytes},
+               "layers": layers, "font_maps": exp.font_maps, "flags": exp.flagged(), "warnings": warnings,
+               "record": args.record, "notes": [{"code": "input_unchanged", "message": "The input file was not modified."}]})
+    else:
+        _say(f"text: {_shown(src.name)} -> {_shown(ref.path)} [pages {exp.first}-{exp.last}: "
+             f"{layers['pdfintake']} pdfintake, {layers['other']} other, {layers['none']} none]")
         for w in warnings:
             _say(f"  warning {w['code']}: {w['message']}")
     return EXIT_OK

@@ -1,4 +1,4 @@
-# pdfintake
+# <img src="https://raw.githubusercontent.com/RazorII/pdfintake/main/claude-plugin/.claude-plugin/icon.png" alt="pdfintake icon" width="40" height="40" align="top"> pdfintake
 
 [![test](https://github.com/RazorII/pdfintake/actions/workflows/test.yml/badge.svg)](https://github.com/RazorII/pdfintake/actions/workflows/test.yml)
 

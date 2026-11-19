@@ -727,6 +727,21 @@ def test_the_piece_info_marker(tl, fonts):
             tl.write_layer(image_pdf(1), [pages[0]], fonts, marker=bad)
 
 
+def test_an_added_page_says_so_in_its_marker(tl, fonts):
+    """write_layer(added=...): --add-only's pages carry /Added in the marker (DESIGN §17); the others don't,
+    and a caller can't set the key itself."""
+    pdf = image_pdf(2)
+    pages = [LayerPage(0, 600, 800, (LayerLine("sample 4521", q(50, 50, 400, 90)),)),
+             LayerPage(1, 600, 800, (LayerLine("other 4521", q(50, 50, 400, 90)),))]
+    tl.write_layer(pdf, pages, fonts, marker={"version": "0.5.0"}, added=[1])
+    first = {str(k): str(v) for k, v in pdf.pages[0].obj.PieceInfo[tl.MARKER_KEY].Private.items()}
+    second = {str(k): str(v) for k, v in pdf.pages[1].obj.PieceInfo[tl.MARKER_KEY].Private.items()}
+    assert first == {"/version": "0.5.0"}
+    assert second == {"/version": "0.5.0", "/Added": tl.ADDED_ITEM[1]}
+    with pytest.raises(ValueError):
+        tl.write_layer(image_pdf(1), [pages[0]], fonts, marker={"Added": "x"})
+
+
 def test_report_and_page_checks(tl, fonts):
     pdf = image_pdf(3)
     rng = random.Random(3)

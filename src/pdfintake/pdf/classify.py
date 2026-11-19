@@ -20,10 +20,14 @@ Classes (DESIGN §2.2, U5):
   piece is mode 3, or a fill or stroke mode (0, 1, 2) whose paint is fully transparent (Scanner
   Pro, for one, draws its OCR at fill alpha 0; decided 2026-11-07, DESIGN Q8). Not ours. OCR'd with
   the old layer stripped (``existing_layer_replaced``), unless ``keep_existing_layer``
-  (``existing_layer_kept``). Dropping that text changes no pixel, and verify's
-  ``renders_identical`` proves it on every build.
+  (``existing_layer_kept``) or ``add_only`` (read, the layer kept; the pipeline adds only what two
+  reads agree it lacks and the run notes ``layer_added_to``, DESIGN §17). Dropping that text changes no
+  pixel, and verify's ``renders_identical`` proves it on every build.
 * ``our_layer``: mode-3 text only, plus our ``/PieceInfo /RazorII_pdfintake`` marker. Left alone
-  unless ``redo_ocr``.
+  unless ``redo_ocr``, or read without stripping under ``add_only``. A marker whose ``/Private``
+  holds ``/Added`` was written by an add-only run beside another tool's layer, so it doesn't make
+  the page ours: such a page stays ``invisible_layer``, handled as another tool's layer is (and
+  ``pdfintake text`` reports it as ``other``), never as a layer ``redo_ocr`` may treat as ours.
 * ``hidden_text``: text present, none visible, some of it transparent text in a clipping mode (4,
   5 or 6), which shapes what the page draws next. No OCR; warning ``existing_layer_kept``, because
   it can't be stripped safely.
@@ -50,6 +54,7 @@ PageKind = Literal["image_only", "invisible_layer", "our_layer", "hidden_text", 
 GARBLE_LIMIT = 0.05           # visible text at or above this garble ratio has a broken font map
 IMAGE_TEXT_COVERAGE = 0.5     # a born-digital page this covered by images may carry unread image text
 MARKER_KEY = "/RazorII_pdfintake"   # our /PieceInfo entry (written by pdf/textlayer.write_layer)
+ADDED_KEY = "/Added"                # in our marker's /Private: an add-only layer beside another tool's
 
 _FILL_MODES = frozenset({0, 2, 4, 6})
 _STROKE_MODES = frozenset({1, 2, 5, 6})
@@ -157,7 +162,11 @@ def _has_marker(holder: Any) -> bool:
 
     try:
         info = holder.get("/PieceInfo")
-        return isinstance(info, pikepdf.Dictionary) and MARKER_KEY in info
+        if not (isinstance(info, pikepdf.Dictionary) and MARKER_KEY in info):
+            return False
+        entry = info[MARKER_KEY]
+        private = entry.get("/Private") if isinstance(entry, pikepdf.Dictionary) else None
+        return not (isinstance(private, pikepdf.Dictionary) and ADDED_KEY in private)
     except Exception:
         return False
 
@@ -182,7 +191,7 @@ def _our_marker(pdf: "pikepdf.Pdf", index: int) -> bool:
 
 
 def _decide(index: int, t: _Tally, coverage: float, marker: bool, *, redo_ocr: bool,
-            keep_existing_layer: bool, font_page: str | None = None) -> PageClass:
+            keep_existing_layer: bool, font_page: str | None = None, add_only: bool = False) -> PageClass:
     warnings: list[str] = []
     if t.visible_chars:
         ratio = garble_ratio("".join(t.visible))
@@ -202,13 +211,16 @@ def _decide(index: int, t: _Tally, coverage: float, marker: bool, *, redo_ocr: b
             warnings.append("clip_text_kept")
         elif t.modes == {3} and marker:
             kind = "our_layer"
-            needs = strip = redo_ocr
+            needs, strip = redo_ocr or add_only, redo_ocr
             if redo_ocr:
                 warnings.append("existing_layer_replaced")
         elif t.modes <= _LAYER_MODES:
             kind = "invisible_layer"
-            needs = strip = not keep_existing_layer
-            warnings.append("existing_layer_kept" if keep_existing_layer else "existing_layer_replaced")
+            if add_only:
+                needs, strip = True, False                # the run notes ``layer_added_to``, not a warning
+            else:
+                needs = strip = not keep_existing_layer
+                warnings.append("existing_layer_kept" if keep_existing_layer else "existing_layer_replaced")
         else:
             kind = "hidden_text"
             warnings.append("existing_layer_kept")
@@ -222,8 +234,9 @@ def _decide(index: int, t: _Tally, coverage: float, marker: bool, *, redo_ocr: b
 
 def classify(pdf: Path, *, redo_ocr: bool, keep_existing_layer: bool,
              font_pages: Mapping[int, str] | None = None,
-             pages: Collection[int] | None = None) -> list[PageClass]:
-    """One ``PageClass`` per page, in page order. ``font_pages`` is the font-map repair's outcome per
+             pages: Collection[int] | None = None, add_only: bool = False) -> list[PageClass]:
+    """One ``PageClass`` per page, in page order. ``add_only`` is ``run --add-only`` (DESIGN §17): a
+    page with an invisible layer (another tool's or ours) is read and its layer kept. ``font_pages`` is the font-map repair's outcome per
     page (``repaired``, ``partial`` or ``unrepaired``; 0-based keys), empty when it found nothing.
     ``pages`` (0-based) limits the walk to those pages (``pdfintake text --pages``); None is every page."""
     font_pages = font_pages or {}
@@ -236,5 +249,6 @@ def classify(pdf: Path, *, redo_ocr: bool, keep_existing_layer: bool,
             coverage = r.image_coverage(index)
             marker = _our_marker(r._pikepdf(), index) if tally.invisible_chars and not tally.visible_chars else False
             out.append(_decide(index, tally, coverage, marker, redo_ocr=redo_ocr,
-                               keep_existing_layer=keep_existing_layer, font_page=font_pages.get(index)))
+                               keep_existing_layer=keep_existing_layer, font_page=font_pages.get(index),
+                               add_only=add_only))
     return out

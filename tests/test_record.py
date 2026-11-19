@@ -46,7 +46,8 @@ SPEC_NOTES = {"input_unchanged", "nothing_written", "vision_not_on_platform", "p
               "signature_not_carried", "conformance_claim_dropped", "copy_unlocked",       # §10.2, §11.1
               "skipped_no_password",                                                       # §12.1
               "render_scaled_down",                                                        # §11.2
-              "font_map_repaired"}                                                         # §15
+              "font_map_repaired",                                                         # §15
+              "layer_added_to"}                                                            # §17
 PASSWORD = "made up record phrase"          # a made-up test password
 CANARY = "ZQXJ-canary-Wombat-7781"
 HEX64 = "9f" * 32

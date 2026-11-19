@@ -4,7 +4,7 @@ Commands (DESIGN §4.1 as changed by §10-§12)::
 
     pdfintake run INPUT... [--paths-from FILE] [--provenance ordinary|counterparty|evidence]
                   [-o OUT | --outdir DIR] [--lang CODE[,CODE]|none] [--force-lang CODE[,CODE]|none]
-                  [--fetch auto|never] [--smaller] [--separate] [--redo-ocr] [--keep-existing-layer]
+                  [--fetch auto|never] [--smaller] [--separate] [--redo-ocr] [--keep-existing-layer] [--add-only]
                   [--overwrite] [--plan] [--workers N] [--thorough | --no-thorough]
                   [--passwords-file FILE] [--json]
     pdfintake apply RECORD-ID (--choice smaller|thorough | --lang CODE) [--passwords-file FILE] [--json]
@@ -157,6 +157,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--redo-ocr", action="store_true", help="replace a text layer pdfintake added before")
     p.add_argument("--keep-existing-layer", action="store_true",
                    help="leave pages that carry another tool's invisible text layer as they are")
+    p.add_argument("--add-only", action="store_true",
+                   help="keep every page's invisible text layer and add only the numbers and codes two "
+                        "readers agree it lacks")
     p.add_argument("--overwrite", action="store_true", help="replace an output that already exists")
     p.add_argument("--plan", action="store_true", help="say what would be done and downloaded; write nothing")
     p.add_argument("--workers", type=int, default=None, metavar="N", help="engine reads at once (1-16)")
@@ -552,6 +555,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
             overwrite=bool(args.overwrite),
             redo_ocr=bool(args.redo_ocr),
             keep_existing_layer=bool(args.keep_existing_layer),
+            add_only=bool(args.add_only),
             separate=bool(args.separate),
             plan_only=bool(args.plan),
             workers=args.workers if args.workers is not None else flow.DEFAULT_WORKERS,

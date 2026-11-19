@@ -218,6 +218,13 @@ def test_run_hands_every_flag_to_flow(capsys: pytest.CaptureFixture[str], monkey
     assert data["records"][0]["output"]["path"] == str(out)
 
 
+def test_run_hands_add_only_to_flow(capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch):
+    rec = Recorder([make_record([Path("/tmp/a.pdf")])])
+    monkeypatch.setattr(flow, "run", rec.run)
+    assert call_json(capsys, "run", "a.pdf", "--add-only", "--json")[0] == 0
+    assert rec.calls[0][1].add_only and not rec.calls[0][1].redo_ocr
+
+
 def test_inputs_may_follow_options(capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch):
     rec = Recorder([make_record([Path("/tmp/a.pdf")])])
     monkeypatch.setattr(flow, "run", rec.run)

@@ -27,10 +27,13 @@ def _one(tmp_path: Path, spec: build.PageSpec, *, redo_ocr: bool = False, keep: 
     return pc
 
 
-def _mark(path: Path, *, where: str = "page") -> Path:
+def _mark(path: Path, *, where: str = "page", added: bool = False) -> Path:
     with pikepdf.open(path, allow_overwriting_input=True) as pdf:
+        private = pikepdf.Dictionary(Tool=pikepdf.String("example"))
+        if added:
+            private.Added = pikepdf.String("beside-other-layer")
         marker = pikepdf.Dictionary({"/RazorII_pdfintake": pikepdf.Dictionary(
-            LastModified=pikepdf.String("D:" + "2000" + "0101" + "000000Z"), Private=pikepdf.Dictionary(Tool=pikepdf.String("example")))})
+            LastModified=pikepdf.String("D:" + "2000" + "0101" + "000000Z"), Private=private)})
         holder = pdf.pages[0].obj if where == "page" else pdf.Root
         holder.PieceInfo = marker
         pdf.save(path)
@@ -104,6 +107,34 @@ def test_our_layer_marker(tmp_path: Path) -> None:
     assert redo.warnings == ["existing_layer_replaced"]
     doc = _mark(build.write_pdf(tmp_path / "doc.pdf", [spec]), where="root")
     assert classify(doc, redo_ocr=False, keep_existing_layer=False)[0].kind == "our_layer"
+
+
+def test_add_only_reads_a_layered_page_and_keeps_its_layer(tmp_path: Path) -> None:
+    """--add-only (DESIGN §17): another tool's layer and our own are read, never stripped."""
+    other = build.write_pdf(tmp_path / "other.pdf", [build.PageSpec(
+        images=(_scan(),), texts=(build.TextSpec("Sample hidden words", fill_alpha=0.0),))])
+    (pc,) = classify(other, redo_ocr=False, keep_existing_layer=False, add_only=True)
+    assert (pc.kind, pc.needs_ocr, pc.strip_old_layer, pc.warnings) == ("invisible_layer", True, False, [])
+    ours = _mark(build.write_pdf(tmp_path / "ours.pdf", [build.PageSpec(
+        images=(_scan(),), texts=(build.TextSpec("Our sample layer", mode=3),))]))
+    (pc,) = classify(ours, redo_ocr=False, keep_existing_layer=False, add_only=True)
+    assert (pc.kind, pc.needs_ocr, pc.strip_old_layer, pc.warnings) == ("our_layer", True, False, [])
+    (pc,) = classify(build.write_pdf(tmp_path / "scan.pdf", [build.PageSpec(images=(_scan(),))]),
+                     redo_ocr=False, keep_existing_layer=False, add_only=True)
+    assert (pc.kind, pc.needs_ocr, pc.strip_old_layer) == ("image_only", True, False)
+
+
+def test_an_added_marker_leaves_the_page_another_tools(tmp_path: Path) -> None:
+    """Our marker with /Added was written beside another tool's layer: the page isn't ours, so
+    --redo-ocr's rule for our layers never applies to it, and a plain run handles it as before."""
+    spec = build.PageSpec(images=(_scan(),), texts=(build.TextSpec("Their layer plus ours", mode=3),))
+    path = _mark(build.write_pdf(tmp_path / "added.pdf", [spec]), added=True)
+    (pc,) = classify(path, redo_ocr=False, keep_existing_layer=False)
+    assert (pc.kind, pc.needs_ocr, pc.strip_old_layer) == ("invisible_layer", True, True)
+    (kept,) = classify(path, redo_ocr=False, keep_existing_layer=True)
+    assert (kept.kind, kept.needs_ocr) == ("invisible_layer", False)
+    (more,) = classify(path, redo_ocr=False, keep_existing_layer=False, add_only=True)
+    assert (more.kind, more.needs_ocr, more.strip_old_layer) == ("invisible_layer", True, False)
 
 
 def test_marker_alone_never_hides_visible_text(tmp_path: Path) -> None:

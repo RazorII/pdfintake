@@ -187,6 +187,7 @@ class RunOptions:
     overwrite: bool = False
     redo_ocr: bool = False
     keep_existing_layer: bool = False
+    add_only: bool = False
     separate: bool = False
     plan_only: bool = False
     workers: int = DEFAULT_WORKERS
@@ -518,6 +519,9 @@ def _check_options(opts: RunOptions) -> None:
         raise UsageError("bad_workers", f"--workers takes a whole number from 1 to {MAX_WORKERS}.")
     if opts.out is not None and opts.outdir is not None:
         raise UsageError("out_and_outdir", "Give either -o or --outdir, not both.")
+    if opts.add_only and (opts.redo_ocr or opts.keep_existing_layer):
+        raise UsageError("add_only_and_layer_flag", "--add-only keeps every text layer and adds to it, so it can't "
+                         "be combined with --redo-ocr or --keep-existing-layer.")
     for flag, codes in (("--lang", opts.lang), ("--force-lang", opts.force_lang)):
         if isinstance(codes, str):
             raise UsageError("bad_language_code", f"{flag} takes language codes such as en or fr.", flag=flag)
@@ -916,13 +920,15 @@ def _process(d: _Doc) -> None:
     mapped = bool(fm is not None and fm.changed and not opts.plan_only)
     d.step = "classify"
     classes = classify.classify(d.source, redo_ocr=opts.redo_ocr, keep_existing_layer=opts.keep_existing_layer,
-                                font_pages=_font_pages(fm))
+                                font_pages=_font_pages(fm), add_only=opts.add_only)
     rec.input["pages"] = len(classes)
     ocr_pages = [c.index for c in classes if c.needs_ocr]
     adds_layer = bool(ocr_pages)
     for c in classes:
         for code in c.warnings:
             _warn(d, code, c.index + 1)
+        if _kept_layer(c, opts):
+            _note(d, "layer_added_to", c.index + 1)
     if mapped and fm is not None:
         for i in fm.pages_repaired:
             _note(d, "font_map_repaired", i + 1)
@@ -974,7 +980,9 @@ def _process(d: _Doc) -> None:
             src, strip_rep = _strip(d, src, stripped, classes)
             _step(d, "strip", "changed", pages=[i + 1 for i in stripped], ops_dropped=strip_rep.ops_dropped)
         d.step = "orientation"
-        src, orient_rep, decisions, osd_map = _orient(d, src, ocr_pages, base)
+        # --add-only never turns a page whose layer it keeps (DESIGN §17): the page stays as it was filed.
+        kept = {c.index for c in classes if _kept_layer(c, opts)}
+        src, orient_rep, decisions, osd_map = _orient(d, src, [i for i in ocr_pages if i not in kept], base)
         d.step = "detect"
         from .ocr import pipeline
 
@@ -992,8 +1000,9 @@ def _process(d: _Doc) -> None:
         lp, packs, fetched, broken = _ensure_packs(d, lp, index, base)
         d.step = "ocr"
         dots = _thorough_use(d, plat)
+        existing = _kept_layers(src, classes) if opts.add_only else None
         ocr = pipeline.read_pages(signals.pages, lp.pages, packs, base, plat, signals=signals, workers=opts.workers,
-                                  thorough=dots)
+                                  thorough=dots, existing=existing)
         layer_input = pipeline.layer_pages(ocr, signals.pages, classes)
         _step(d, "ocr", "ok", pages=len(ocr), packs=list(lp.packs_needed), thorough=d.thorough)
     elif opts.plan_only:
@@ -1016,7 +1025,8 @@ def _process(d: _Doc) -> None:
         with pikepdf.open(src) as pdf:
             if layer_input:
                 fonts = _fontset(base, packs)
-                layer_rep = textlayer.write_layer(pdf, layer_input, fonts, marker={"Version": __version__})
+                layer_rep = textlayer.write_layer(pdf, layer_input, fonts, marker={"Version": __version__},
+                                                  added=[c.index for c in classes if _kept_beside(c, opts)])
             if copy:
                 d.step = "signatures"
                 from .pdf import strip
@@ -1061,6 +1071,10 @@ def _process(d: _Doc) -> None:
     suffix = _suffix(d, copy, layered or mapped)
     if d.kind == "pdf" and copy and not layered and not mapped and not d.encrypted:
         # No text came out of the pages, so a copy would add nothing searchable to the original.
+        _done_without_output(d, "nothing_written")
+        return
+    if d.kind == "pdf" and d.opts.add_only and not layered and not mapped:
+        # --add-only found nothing to add: the file is left as it is, however much a re-save would save.
         _done_without_output(d, "nothing_written")
         return
     if d.kind == "pdf" and not copy and not layered and not mapped:
@@ -1122,6 +1136,30 @@ def _process(d: _Doc) -> None:
     d.seal.check()
     _note(d, "input_unchanged")
     d.rec.status, d.rec.exit = "done", 0
+
+
+def _kept_layer(c: PageClass, opts: RunOptions) -> bool:
+    """A page whose layer ``run --add-only`` keeps and adds to (DESIGN §17), another tool's or ours."""
+    return opts.add_only and c.needs_ocr and not c.strip_old_layer and c.kind in ("invisible_layer", "our_layer")
+
+
+def _kept_beside(c: PageClass, opts: RunOptions) -> bool:
+    """A page where ``run --add-only`` adds to another tool's layer (DESIGN §17): its marker says so,
+    so the page stays that tool's. A page with our own layer stays ours."""
+    return _kept_layer(c, opts) and c.kind == "invisible_layer"
+
+
+def _kept_layers(src: Path, classes: Sequence[PageClass]) -> dict[int, str]:
+    """0-based page -> the text of the layer ``run --add-only`` keeps (the one read of a layer,
+    ``verify.layer_text``), for the pages it reads and adds to."""
+    from .pdf import verify
+
+    keep = [c.index for c in classes if c.needs_ocr and not c.strip_old_layer
+            and c.kind in ("invisible_layer", "our_layer")]   # _kept_layer's pages, opts aside
+    if not keep:
+        return {}
+    _count, texts = verify.layer_text(src, keep)
+    return {i: texts.get(i, "") for i in keep}
 
 
 def _done_without_output(d: _Doc, code: str) -> None:

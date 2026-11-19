@@ -339,7 +339,7 @@ def test_a_born_digital_pdf_writes_nothing(env: Env, tmp_path: Path, untouched):
     untouched(src)
     rec = flow.run([src])[0]
     assert_record_ok(rec)
-    assert (rec.status, rec.exit, rec.output) == ("done", 0, None)
+    assert (rec.status, rec.exit, rec.output) == ("done", 0, None), [s for s in rec.steps if s["status"] == "failed"]
     assert {n.code for n in rec.notes} >= {"nothing_written", "input_unchanged"}
     assert sorted(p.name for p in tmp_path.glob("*.pdf")) == ["Letter.pdf"]
     assert env.reader.reads == []                      # a page with printed text is never read
@@ -389,6 +389,81 @@ def test_a_scanner_apps_transparent_layer_is_replaced_by_a_read(env: Env, tmp_pa
     assert_record_ok(kept)
     assert kept.status == "done" and "existing_layer_kept" in {w.code for w in kept.warnings}
     assert len(env.reader.reads) == reads
+
+
+def test_add_only_keeps_another_tools_layer_and_adds_what_two_reads_agree_on(env: Env, tmp_path: Path, untouched):
+    # --add-only (DESIGN §17): the old layer stays word for word, the page gets only the codes the reader
+    # and the checker both read that it lacks, its marker says Added, and a second run adds nothing.
+    spec = build.PageSpec(images=(build.ImageSpec(page_image()),),
+                          texts=(build.TextSpec("Zebra hidden words and a total of 4521", fill_alpha=0.0),))
+    src = build.write_pdf(tmp_path / "Filed.pdf", [spec])
+    untouched(src)
+    rec = flow.run([src], flow.RunOptions(add_only=True))[0]
+    data = assert_record_ok(rec)
+    assert (rec.status, rec.exit) == ("done", 0), rec.steps
+    classify_step = next(s for s in rec.steps if s["step"] == "classify")
+    assert classify_step["detail"]["kinds"] == {"invisible_layer": 1}
+    assert not rec.warnings and ("layer_added_to", 1) in {(n.code, n.page) for n in rec.notes}
+    assert not any(s["step"] == "strip" for s in rec.steps)
+    assert {c["name"]: c["ok"] for c in data["verify"]}["renders_identical"] is True
+    out = Path(rec.output["path"])
+    text = pdf_text(out)
+    assert "Zebra hidden words" in text                     # the kept layer, untouched
+    assert "AB123456" in text                               # both reads have it, the layer didn't
+    assert "example invoice" not in text                    # the pick's lines are never written
+    import pikepdf
+
+    with pikepdf.open(out) as pdf:
+        private = pdf.pages[0].obj.PieceInfo["/RazorII_pdfintake"].Private
+        assert "/Added" in private
+    (tmp_path / "again").mkdir()
+    again = flow.run([out], flow.RunOptions(add_only=True, outdir=tmp_path / "again"))[0]
+    assert_record_ok(again)
+    assert again.output is None and "nothing_written" in {n.code for n in again.notes}
+    with pytest.raises(UsageError):
+        flow.run([src], flow.RunOptions(add_only=True, redo_ocr=True))
+
+
+def test_add_only_never_turns_a_kept_page(env: Env, tmp_path: Path, untouched):
+    # A plain run bakes a sideways flag (test above); --add-only leaves a page whose layer it keeps exactly as
+    # it was filed, flag and all, so the kept text reads back as before (DESIGN §17).
+    import pikepdf
+
+    spec = build.PageSpec(rotate=90, images=(build.ImageSpec(page_image()),),
+                          texts=(build.TextSpec("Zebra hidden words", fill_alpha=0.0),))
+    src = build.write_pdf(tmp_path / "Sideways filed.pdf", [spec])
+    untouched(src)
+    rec = flow.run([src], flow.RunOptions(add_only=True))[0]
+    data = assert_record_ok(rec)
+    assert rec.exit == 0 and rec.output is not None, rec.steps
+    orientation = next(s for s in rec.steps if s["step"] == "orientation")
+    assert orientation["detail"]["baked"] == [] and data["pages"][0]["orientation"] is None
+    with pikepdf.open(rec.output["path"]) as pdf:
+        assert int(pdf.pages[0].obj.get("/Rotate", 0)) == 90
+    assert "Zebra hidden words" in pdf_text(Path(rec.output["path"]))
+
+
+def test_add_only_with_nothing_to_add_writes_nothing(env: Env, tmp_path: Path, untouched, monkeypatch):
+    # The kept layer already has every value both reads agree on, so the file is left alone, even where a
+    # lossless re-save would come out smaller.
+    from pdfintake.pdf import shrink
+
+    spec = build.PageSpec(images=(build.ImageSpec(page_image()),),
+                          texts=tuple(build.TextSpec(line, y=720.0 - 20 * i, size=9.0, fill_alpha=0.0)
+                                      for i, line in enumerate(EN_LINES)))
+    src = build.write_pdf(tmp_path / "Checked.pdf", [spec])
+    untouched(src)
+    real = shrink.lossless_shrink
+
+    def smaller(built, final, *, content_changed):
+        rep = real(built, final, content_changed=content_changed)
+        return dataclasses.replace(rep, byte_copy=False, after=rep.before // 2)
+
+    monkeypatch.setattr(shrink, "lossless_shrink", smaller)
+    rec = flow.run([src], flow.RunOptions(add_only=True))[0]
+    assert_record_ok(rec)
+    assert (rec.status, rec.exit, rec.output) == ("done", 0, None), [s for s in rec.steps if s["status"] == "failed"]
+    assert "nothing_written" in {n.code for n in rec.notes}
 
 
 def test_a_scan_whose_info_holds_null_values_is_written(env: Env, tmp_path: Path, untouched):

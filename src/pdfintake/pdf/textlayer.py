@@ -40,7 +40,7 @@ import struct
 import threading
 import unicodedata
 from collections import Counter
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -55,6 +55,7 @@ if TYPE_CHECKING:
 
 OVERLAY_NAME = "/PdfIntakeOCR0"     # a page-unique suffix (/PdfIntakeOCR1, ...) if the name is taken
 MARKER_KEY = "/RazorII_pdfintake"   # the /PieceInfo key that marks a page carrying our layer
+ADDED_ITEM = ("Added", "beside-other-layer")   # in the marker's /Private on an add-only page (classify.ADDED_KEY)
 
 LAYER_PAD = 0.5          # pt of slack kept inside the CropBox on every side
 MIN_SIZE = 1.0           # pt; the floor before a line is moved or wrapped
@@ -961,7 +962,7 @@ def _mark(pdf: "pikepdf.Pdf", page: "pikepdf.Page", date: str, items: Sequence[t
 
 
 def write_layer(pdf: "pikepdf.Pdf", pages: Sequence[LayerPage], fonts: FontSet, *,
-                marker: Mapping[str, str]) -> LayerReport:
+                marker: Mapping[str, str], added: Collection[int] = ()) -> LayerReport:
     """Write the invisible layer for ``pages`` into ``pdf`` (in place) and report what was written.
 
     One FPDF(unit="pt") document holds every page's layer, in TextMode.INVISIBLE only; fpdf2's
@@ -972,11 +973,16 @@ def write_layer(pdf: "pikepdf.Pdf", pages: Sequence[LayerPage], fonts: FontSet, 
     ``marker["LastModified"]`` (a PDF date) is the marker's date. When it is absent the date is
     the fixed DEFAULT_MARKER_DATE, never the clock, so the same input gives the same bytes.
     A page with nothing to write gets no form and no marker. Characters of a line that can't be
-    placed are counted in ``dropped`` with the uncovered ones.
+    placed are counted in ``dropped`` with the uncovered ones. A page in ``added`` (0-based) got its
+    layer beside another tool's (``run --add-only``, DESIGN §17): its marker also carries ``Added``,
+    so ``classify`` keeps the page another tool's (``invisible_layer``), never ours.
     """
     import pikepdf
 
     date, items = _check_marker(marker)
+    if any(k == ADDED_ITEM[0] for k, _ in items):
+        raise ValueError(f"marker key {ADDED_ITEM[0]!r} is set by write_layer itself, from ``added``")
+    added = frozenset(int(i) for i in added)
     report = LayerReport({}, {}, Counter(), 0, [])
     plans: list[_PagePlan] = []
     seen: set[int] = set()
@@ -1056,7 +1062,7 @@ def write_layer(pdf: "pikepdf.Pdf", pages: Sequence[LayerPage], fonts: FontSet, 
             _place(pdf, pdf.pages[plan.index], pdf.make_indirect(form))
     report.font_tags = retag_subsets(pdf, only=ours)
     for plan in plans:
-        _mark(pdf, pdf.pages[plan.index], date, items)
+        _mark(pdf, pdf.pages[plan.index], date, [*items, ADDED_ITEM] if plan.index in added else items)
     return report
 
 

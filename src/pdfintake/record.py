@@ -137,6 +137,8 @@ TEXT_FLAGS: tuple[str, ...] = (
 )
 NOTE_CODES: frozenset[str] = frozenset({"input_unchanged", "nothing_written", "vision_not_on_platform",
                                          "pack_fetched", "mixed_script_unchecked", "rotate_kept",
+                                         # §17: run --add-only kept the page's layer and added to it
+                                         "layer_added_to",
                                          # §10.2, §11.1: copy mode; §12.1: no saved password opened it
                                          "signature_not_carried", "conformance_claim_dropped", "copy_unlocked",
                                          "skipped_no_password",
@@ -190,6 +192,8 @@ WARNING_MESSAGES: Mapping[str, str] = {
 }
 NOTE_MESSAGES: Mapping[str, str] = {
     "input_unchanged": "The input file was not modified.",
+    "layer_added_to": ("This page kept its text layer as it was; pdfintake only added numbers and codes that two of "
+                       "its readers read the same way and the layer lacked."),
     "nothing_written": "Nothing was written, because a new file wouldn't have added a text layer or saved at least 1%.",
     "vision_not_on_platform": "Apple Vision isn't available on this platform.",
     "pack_fetched": "A language pack was downloaded.",

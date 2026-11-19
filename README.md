@@ -79,7 +79,7 @@ pdfintake --version
 
 **Languages.** pdfintake detects each page's writing system and language. `--lang CODE` sets the language of pages it was unsure about, `--force-lang CODE` sets every page, and `none` means no text layer for those pages. When detection isn't sure, the likeliest language reads the page, and the record says so and offers to read it again as another. `--fetch auto` (the default) downloads every pack a document needs, without asking. `--fetch never` works offline and reads pages whose pack isn't installed with English, with a warning.
 
-**Existing text layers.** A page whose only text is an invisible layer from another tool has that layer replaced (`--keep-existing-layer` leaves it). A page pdfintake already read is left alone (`--redo-ocr` reads it again).
+**Existing text layers.** A page whose only text is an invisible layer from another tool has that layer replaced (`--keep-existing-layer` leaves it). `--add-only` keeps every page's layer as it is and adds only the numbers and codes that two of pdfintake's readers read the same way and the layer lacks: for a layer someone has already checked, where a fresh read would trade values it has right for new mistakes. A page pdfintake already read is left alone (`--redo-ocr` reads it again).
 
 ### Nothing is asked during a run
 

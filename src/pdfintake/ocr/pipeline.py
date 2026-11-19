@@ -415,6 +415,15 @@ def competed_fills(prep: _Prepared, lines: Sequence[Line], page_fills: Sequence[
     return out
 
 
+def added_fills(existing: str, reads: Sequence[EngineRead]) -> list[Fill]:
+    """``run --add-only`` (§17): the page keeps its layer, and gets only the numbers and codes two of
+    its reads (every reader, the checker, dots) wrote the same and the layer lacks
+    (``fills.agreed_tokens``). Nothing else: measured on hand-checked layers, the fills made for a
+    fresh read add a reader's wrong copy of a value the layer has right."""
+    have = [Line(t, 1.0, None) for t in existing.splitlines() if t.strip()]
+    return fills.agreed_tokens([r for r in reads if r.status == "ok"], have)
+
+
 def resolve_readers(pack: InstalledPack, base: InstalledPack, platform_key: str) -> ResolvedReaderSet:
     """The pack's reader set for ``platform_key`` and what each engine says about its use here.
 
@@ -1567,11 +1576,13 @@ def _page_script(plan: PagePlan, sig: PageSignals | None) -> ScriptCall:
 def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: PageSignals | None,
                reuse: Mapping[str, EngineRead], extra: Sequence[str], sessions: _Sessions,
                pool: Mapping[str, InstalledPack], engines: ThreadPoolExecutor | None = None,
-               thorough: _Use | None = None) -> PageOCR:
+               thorough: _Use | None = None, existing: str | None = None) -> PageOCR:
     """Pass 2 for one page (runs in a worker). The page's reads run side by side on the engine
     threads (``_spawn``) and are taken in the reader set's order. With ``thorough`` (§14), dots reads
     the page too: as one more competing reader on a ``corroborated_trigrams`` pack, otherwise as the
-    source of ``thorough_fills``; a failed dots read changes nothing but a ``thorough_failed`` warning."""
+    source of ``thorough_fills``; a failed dots read changes nothing but a ``thorough_failed`` warning.
+    ``existing`` is the page's own layer text under ``run --add-only`` (§17): the reads and the pick
+    run as always, for the record, but the layer gets only ``added_fills``, never the pick's lines."""
     script = _page_script(plan, sig)
     warnings = [*plan.warnings, *extra]
     if prep is None:                                     # planned with no pack: no reads, no layer
@@ -1605,7 +1616,10 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
     lines = list(pick.lines)
     repairs: dict[str, int] = {}
     page_fills: list[Fill] = []
-    if pick.chosen is not None:
+    if existing is not None:
+        lines = []
+        page_fills = added_fills(existing, [*reads, *([dots] if dots is not None else [])])
+    elif pick.chosen is not None:
         for step, repair, params in prep.repairs:
             source = params.get("source")
             lines, counts = repair.repair(lines, by_id.get(source) if source else checker, params,
@@ -1631,6 +1645,8 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
     if not has_layer:
         warnings.append("no_layer_readers_failed")
     layer_text = "\n".join(ll.text for ll in _layer_lines(lines, page_fills))
+    if existing is not None:
+        layer_text = existing + "\n" + layer_text
     must: dict[str, dict[str, int]] = {}
     items = list(prep.must)
     for other in _second_packs(plan, pool):
@@ -1647,7 +1663,7 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
 
 def read_pages(pages: Sequence[PageImage], plans: Sequence[PagePlan], packs: Mapping[str, InstalledPack],
                base: InstalledPack, platform_key: str, *, signals: DocumentSignals | None, workers: int,
-               thorough: _Use | None = None) -> list[PageOCR]:
+               thorough: _Use | None = None, existing: Mapping[int, str] | None = None) -> list[PageOCR]:
     """Pass 2: read each planned page with its pack's reader set; one ``PageOCR`` per plan, in plan order.
 
     ``packs`` holds every pack a plan names (the base pack may be left out: ``base`` reads its
@@ -1656,7 +1672,8 @@ def read_pages(pages: Sequence[PageImage], plans: Sequence[PagePlan], packs: Map
     passes None. A plan with no pack and composition ``none`` (``--lang none``) gives a page with no
     reads and no layer; any other plan with no pack (an ``undecided`` page ``langplan.resolve_unsure``
     didn't settle) is a ValueError, so no page loses its text unrecorded. Works without the index or
-    the store: a draft manifest in an ``InstalledPack`` reads.
+    the store: a draft manifest in an ``InstalledPack`` reads. ``existing`` (0-based page -> its layer
+    text) marks the pages ``run --add-only`` keeps the layer of (``_read_page``).
     """
     n = _workers(workers)
     by_index: dict[int, PageImage] = {}
@@ -1696,7 +1713,8 @@ def read_pages(pages: Sequence[PageImage], plans: Sequence[PagePlan], packs: Map
     try:
         futures = [executor.submit(_read_page, prepared.get(pp.pack) if pp.pack is not None else None,
                                    by_index[pp.index], pp, sigs.get(pp.index), reuse.get(pp.index, {}),
-                                   list(extra.get(pp.index, ())), sessions, pool, engines, thorough)
+                                   list(extra.get(pp.index, ())), sessions, pool, engines, thorough,
+                                   (existing or {}).get(pp.index))
                    for pp in plan_list]
         return [f.result() for f in futures]
     finally:

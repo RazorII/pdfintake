@@ -197,6 +197,24 @@ def test_a_dots_read_that_failed_or_read_nothing_adds_no_competed_fills(tmp_path
     assert page.pick.chosen == "vision" and page.fills == []
 
 
+def test_add_only_writes_only_what_two_reads_agree_the_kept_layer_lacks(tmp_path: Path,
+                                                                    thai_fakes: dict[str, tp.FakeOcr]):
+    """--add-only (§17): the reads and the pick run as always, but the layer gets none of the pick's
+    lines, only the codes two reads wrote the same that the kept layer lacks; one read alone adds nothing."""
+    root = tmp_path / "packs"
+    en, th = tp.base_pack(root), thai_corroborated(root)
+    right = list(tp.THAI_TEXT)
+    thai_fakes["fk_va"].script = lambda lang, i: [*right, "รหัส XK7740KD9 ref ZZ9999"]
+    thai_fakes["fk_rc"].script = lambda lang, i: [*right, "รหัส QXK7740KD9"]
+    dots = tp.FakeOcr("fk_dots", lambda lang, i: [*right, "รหัส QXK7740KD9 โทร 555-0147"])
+    kept = "\n".join([*right, "รหัส XK7740KD9"])
+    [page] = tp.pipeline.read_pages(tp.pages_for(tmp_path, 1), [tp.plan_for(0, "th", script="Thai")], {"th": th}, en,
+                                    tp.KEY, signals=None, workers=2, thorough=dots_use(en, dots), existing={0: kept})
+    assert page.pick.chosen is not None and page.pick.lines == []
+    assert [(f.kind, f.text) for f in page.fills] == [("id", "QXK7740KD9")]
+    assert tp.pipeline.added_fills(kept + "\nQXK7740KD9", [r for r in page.reads]) == []
+
+
 def test_a_latin_pack_with_the_corroborated_rule_still_takes_fills(tmp_path: Path, thai_fakes: dict[str, tp.FakeOcr]):
     """de and vi pick with corroborated_trigrams over Latin: dots fills there, it never competes."""
     root = tmp_path / "packs"

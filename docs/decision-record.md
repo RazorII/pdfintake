@@ -198,6 +198,7 @@ A note is information, reported in one summary line:
 
 - `input_unchanged`, `nothing_written`, `vision_not_on_platform`, `pack_fetched`, `mixed_script_unchecked`, `rotate_kept`.
 - `render_scaled_down`: a page was rendered smaller so that no side passes 32767 pixels, the OCR engine's limit.
+- `layer_added_to`: `run --add-only` kept the page's text layer as it was and added only numbers and codes that two of its readers read the same way and the layer lacked (the page's `fills`; none when it lacked none). The page's marker carries `Added` when the layer was another tool's, so the page stays that tool's: `pdfintake text` reports it as `other`, and a plain run replaces it as it would any other tool's layer.
 - `font_map_repaired`: the page's text was drawn with a font that had no working map from glyphs to letters, and pdfintake added the map (the `fontmap` step). Nothing drawn changed, and verify proves it (above, `verify[]`).
 - For a searchable copy: `signature_not_carried` ("The signed original is the one that counts; this copy is for finding it."), `conformance_claim_dropped` (the copy no longer claims PDF/A or PDF/UA), and `copy_unlocked` ("The copy has no password, so anyone with the file can read it."). A copy is always saved without encryption, so it can be searched; always report `copy_unlocked` in one line.
 - `skipped_no_password`: the file needs a password to open and no saved password opened it, so nothing was written and the file is untouched (exit 0).

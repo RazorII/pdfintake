@@ -339,3 +339,49 @@ def test_fills_perf(page) -> None:
     fills = run_fills([Use(n) for n in ORDER], chosen, chk, page, "Latin")
     elapsed = time.perf_counter() - t
     assert fills and elapsed < 5.0, elapsed
+
+
+# --------------------------------------------------------------------------- thorough mode's agreed fill
+
+def read(use_id: str, *lines: Line, status: str | None = None, role: str = "reader"):
+    return build.engine_read(use_id, role=role, lines=list(lines), status=status)
+
+
+def test_agreed_codes_need_two_reads_and_ignore_the_glued_character_allowance() -> None:
+    """A code two other reads wrote the same goes in even when the chosen read has it less its first
+    character (the case the ``ids`` step lets pass as present); a code only one read has stays out."""
+    from pdfintake.ocr.fills import agreed_tokens
+
+    chosen = [L("Member XK7740KD9 tel 555-0141", 10)]
+    reads = [read("tesseract", L("Member QXK7740KD9 tel 555-0147", 10, 0.6)),
+             read("rapidocr", L("Member QXK7740KD9 tel 555 0147 ref ZZ1234", 10, 0.5), role="checker"),
+             read("dots", L("Member QXK7740KD9 ref ZZ9999", 12, 1.0))]
+    out = agreed_tokens(reads, chosen)
+    assert [(f.kind, f.text, f.source) for f in out] == [("id", "QXK7740KD9", "tesseract")]
+    assert out[0].box == reads[0].lines[0].box
+
+
+def test_agreed_tokens_split_at_slashes_and_keep_the_written_form() -> None:
+    from pdfintake.ocr.fills import agreed_tokens
+
+    chosen = [L("Ticket 1234-567/BCDE234FG/1000X", 10)]
+    reads = [read("rapidocr", L("Ticket 1234-567/ABCDE234FG/1000X", 10), role="checker"),
+             read("dots", L("Ticket 1234-567/ABCDE234FG/1000X", 10))]
+    out = agreed_tokens(reads, chosen)
+    assert [(f.kind, f.text) for f in out] == [("id", "ABCDE234FG")]
+    reads = [read("rapidocr", L("Order 1111-AB222-00333", 10), role="checker"),
+             read("dots", L("Order 1111-AB222-00333", 10))]
+    assert [f.text for f in agreed_tokens(reads, [L("Order 1117-AB222-00333", 10)])] == \
+        ["1111AB22200333 1111-AB222-00333"]
+
+
+def test_agreed_tokens_skip_what_the_layer_has_and_short_or_failed_reads() -> None:
+    from pdfintake.ocr.fills import agreed_tokens
+
+    reads = [read("rapidocr", L("Total 4,250 items 123 code AB12CD", 10), role="checker"),
+             read("dots", L("Total 4,250 items 123 code AB12CD", 10)),
+             read("vision", L("Total 9876 again", 10), status="failed")]
+    assert agreed_tokens(reads, [L("Total 4,250 code AB 12 CD", 10)]) == []     # present, spaced or not
+    out = agreed_tokens(reads, [L("Total 4,25 code AB12CO", 10)])
+    assert [(f.kind, f.text) for f in out] == [("number", "4250 4,250"), ("id", "AB12CD")]   # 123: too short
+    assert agreed_tokens([reads[0], reads[2]], [L("nothing", 10)]) == []          # one ok read can't agree

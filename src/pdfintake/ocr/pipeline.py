@@ -394,6 +394,27 @@ def thorough_fills(prep: _Prepared, lines: Sequence[Line], page_fills: Sequence[
     return [*nums, *words]
 
 
+def competed_fills(prep: _Prepared, lines: Sequence[Line], page_fills: Sequence[Fill], reads: Mapping[str, EngineRead],
+                   chosen: str | None, dots: EngineRead, page: PageImage, script: str) -> list[Fill]:
+    """Thorough mode's fills on a page where dots competed (§14.1): when another reader won, dots'
+    fills as on a Latin pack plus the codes it read that the layer lacks (the pack's ``ids`` step
+    with dots as the source); then, whoever won, the numbers and codes two of the other reads agree
+    on (``fills.agreed_tokens``). The pick goes by the pack's script alone, so a reader that wins on
+    Thai text brings its digits with it, however the others read them. A dots read that failed or
+    read nothing changes nothing here either."""
+    if dots.status != "ok" or not dots.lines:
+        return []
+    out: list[Fill] = []
+    if chosen != dots.use_id:
+        out += thorough_fills(prep, lines, page_fills, dots, page, script)
+        ids = fills.FILLS[("ids", 1)]
+        ctx = ValidationContext(frozenset(), frozenset(), {}, frozenset(), f"fills.{ids.name}")
+        out += ids.fill(lines, dots, page, ids.PARAMS.validate({}, ctx), (*page_fills, *out))
+    have = [*lines, *(Line(f.text, f.conf, f.box) for f in [*page_fills, *out])]
+    out += fills.agreed_tokens([r for u, r in reads.items() if u != chosen], have)
+    return out
+
+
 def resolve_readers(pack: InstalledPack, base: InstalledPack, platform_key: str) -> ResolvedReaderSet:
     """The pack's reader set for ``platform_key`` and what each engine says about its use here.
 
@@ -1594,6 +1615,9 @@ def _read_page(prep: _Prepared | None, page: PageImage, plan: PagePlan, sig: Pag
         page_fills = fills.run_fills(prep.fills, lines, checker, page, script.name or prep.script or "Latin")
         if dots is not None and not competes:
             page_fills += thorough_fills(prep, lines, page_fills, dots, page, script.name or prep.script or "Latin")
+        elif dots is not None:
+            page_fills += competed_fills(prep, lines, page_fills, by_id, pick.chosen, dots, page,
+                                         script.name or prep.script or "Latin")
     pick = dataclasses.replace(pick, lines=lines)
     has_layer = pick.chosen is not None
     warnings += _reader_warnings(reads, has_layer)

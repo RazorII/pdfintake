@@ -19,7 +19,8 @@ page alone (DESIGN §14.1). What shapes this module:
   element, until the token limit. The read stops as soon as the output ends in such a loop
   (``LoopWatch``), keeps every element that closed before the cut, and drops the repeats.
 * **No confidences.** The model gives none, so every line gets ``conf`` 1.0. Only thorough mode's
-  fills and the ``corroborated_trigrams`` pick see these lines, and neither reads ``conf``.
+  fills and the ``corroborated_trigrams`` pick see these lines; the one that reads ``conf`` (the
+  ``ids`` step, run with dots as its source on a page dots competed for and lost) takes every line.
 
 Each element's text (Markdown, a table as HTML, a formula as LaTeX) is flattened to plain lines; an
 element of several lines has its box cut into that many bands, one per line. Boxes come back in the

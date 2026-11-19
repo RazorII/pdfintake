@@ -164,7 +164,7 @@ Stopped by SIGTERM or SIGHUP (a closed terminal, a service manager stopping it),
 On a Mac with Apple silicon, pdfintake can also read every OCR page with [dots.mocr](https://huggingface.co/rednote-hilab/dots.mocr), a vision-language OCR model that runs on the Mac's GPU. It never reads a page alone, and it doesn't replace the regular readers:
 
 - **On Latin-script pages** it adds the numbers the text layer lacks and the lines in another writing system (a Greek or Cyrillic line on a German page). On the benchmark pages of the nine Latin-script languages that lifted word recall from 0.945 to 0.967 (pages with a second script: 0.882 to 0.969) and digit runs from 0.977 to 0.988, and no page read worse.
-- **On Thai pages** it competes with the other readers, and its read is chosen only where they back it up, so a blank or looping read never wins.
+- **On Thai pages** it competes with the other readers, and its read is chosen only where they back it up, so a blank or looping read never wins. The choice goes by the Thai text, so the reader that wins brings its numbers with it; when that isn't dots, the numbers and codes dots read that the layer lacks still go in, and so does any number or code two of the other readers read the same way. On the Thai benchmark pages that adds nothing.
 - **What it costs:** about 17 seconds more a page on an M-series Mac, a one-time 4.4 GB download from Hugging Face, and the `pdfintake[thorough]` libraries (`mlx`, `tokenizers`). Now and then it adds a wrong extra word or number to the invisible text: 98 on the 108 benchmark pages, nearly all on pages of tiny print or with a second script.
 
 It's off until you turn it on:

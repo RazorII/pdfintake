@@ -151,6 +151,52 @@ def test_a_tie_goes_to_the_packs_readers(tmp_path: Path, thai_fakes: dict[str, t
     assert page.pick.chosen == "vision"
 
 
+def test_a_losing_dots_read_still_brings_its_numbers_and_the_agreed_codes(tmp_path: Path,
+                                                                         thai_fakes: dict[str, tp.FakeOcr]):
+    """The pick goes by Thai trigrams, so the reader that wins on Thai brings its digits with it. When dots
+    loses, its numbers the layer lacks go in (as on a Latin pack), and so does a code two other reads agree
+    on that the winner cut short (§14.1)."""
+    root = tmp_path / "packs"
+    en, th = tp.base_pack(root), thai_corroborated(root)
+    right = list(tp.THAI_TEXT)
+    thai_fakes["fk_va"].script = lambda lang, i: [*right, "รหัส XK7740KD9 โทร 555-0141"]
+    thai_fakes["fk_rc"].script = lambda lang, i: [*right, "รหัส QXK7740KD9 โทร 555-0147"]
+    dots = tp.FakeOcr("fk_dots", lambda lang, i: [*(t[:5] for t in right), "รหัส QXK7740KD9 โทร 555-0147"])
+    [page] = tp.pipeline.read_pages(tp.pages_for(tmp_path, 1), [tp.plan_for(0, "th", script="Thai")], {"th": th}, en,
+                                    tp.KEY, signals=None, workers=2, thorough=dots_use(en, dots))
+    assert page.pick.chosen == "vision"
+    assert [(f.kind, f.text, f.source) for f in page.fills] == [("number", "555-0147", "dots"),
+                                                               ("id", "QXK7740KD9", "rapidocr")]
+
+
+def test_a_winning_dots_read_gets_only_the_agreed_codes(tmp_path: Path, thai_fakes: dict[str, tp.FakeOcr]):
+    root = tmp_path / "packs"
+    en, th = tp.base_pack(root), thai_corroborated(root)
+    right = list(tp.THAI_TEXT)
+    thai_fakes["fk_tb"].script = lambda lang, i: [*(t[:4] for t in right), "รหัส QXK7740KD9"]
+    thai_fakes["fk_rc"].script = lambda lang, i: [*right, "รหัส QXK7740KD9"]
+    good = tp.FakeOcr("fk_dots", lambda lang, i: [*right, "รหัส QXK774OKD9"])
+    [page] = tp.pipeline.read_pages(tp.pages_for(tmp_path, 1), [tp.plan_for(0, "th", script="Thai")], {"th": th}, en,
+                                    tp.KEY, signals=None, workers=2, thorough=dots_use(en, good))
+    assert page.pick.chosen == "dots"
+    assert [(f.kind, f.text, f.source) for f in page.fills] == [("id", "QXK7740KD9", "tesseract")]
+
+
+@pytest.mark.parametrize("outcome", ["failed", "empty"])
+def test_a_dots_read_that_failed_or_read_nothing_adds_no_competed_fills(tmp_path: Path, outcome: str,
+                                                                       thai_fakes: dict[str, tp.FakeOcr]):
+    root = tmp_path / "packs"
+    en, th = tp.base_pack(root), thai_corroborated(root)
+    right = list(tp.THAI_TEXT)
+    thai_fakes["fk_va"].script = lambda lang, i: [*right, "รหัส XK7740KD9"]
+    thai_fakes["fk_tb"].script = lambda lang, i: [*(t[:4] for t in right), "รหัส QXK7740KD9"]
+    thai_fakes["fk_rc"].script = lambda lang, i: [*right, "รหัส QXK7740KD9"]
+    bad = tp.FakeOcr("fk_dots", lambda lang, i: "failed" if outcome == "failed" else [])
+    [page] = tp.pipeline.read_pages(tp.pages_for(tmp_path, 1), [tp.plan_for(0, "th", script="Thai")], {"th": th}, en,
+                                    tp.KEY, signals=None, workers=2, thorough=dots_use(en, bad))
+    assert page.pick.chosen == "vision" and page.fills == []
+
+
 def test_a_latin_pack_with_the_corroborated_rule_still_takes_fills(tmp_path: Path, thai_fakes: dict[str, tp.FakeOcr]):
     """de and vi pick with corroborated_trigrams over Latin: dots fills there, it never competes."""
     root = tmp_path / "packs"

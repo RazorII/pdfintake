@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from ..errors import PackError
 from ..params import Param, ParamTable, ValidationContext
 from ..protocols import FillStep
-from ..types import EngineRead, Fill, Line, PageImage
+from ..types import EngineRead, Fill, FillKind, Line, PageImage
 
 if TYPE_CHECKING:
     from ..langpacks.manifest import StepUse
@@ -435,6 +435,55 @@ def missing_numbers(read: EngineRead, chosen: Sequence[Line]) -> list[Fill]:
                 missing.append(m.group())
         if missing:
             out.append(Fill("number", " ".join(missing), ln.conf, ln.box, read.use_id))
+    return out
+
+
+# A number or code for ``agreed_tokens``: letters and digits joined by - . : (a / or a space ends one).
+_AGREED = re.compile(r"[A-Za-z0-9]+(?:[-.:,][A-Za-z0-9]+)*")
+
+
+def _agreed_tokens(text: str) -> list[tuple[str, str]]:
+    """(folded, as written) for every number or code in ``text``: 4 to 24 letters and digits once
+    folded, at least one a digit. A / ends a token, so a code inside a slash-joined string counts on
+    its own."""
+    out: list[tuple[str, str]] = []
+    for part in _ascii_digits(text).replace("/", " ").split():
+        for m in _AGREED.finditer(part):
+            a = _alnum(m.group(0))
+            if 4 <= len(a) <= 24 and re.search(r"[0-9]", a):
+                out.append((a, m.group(0)))
+    return out
+
+
+def agreed_tokens(reads: Sequence[EngineRead], chosen: Sequence[Line]) -> list[Fill]:
+    """Thorough mode's agreed fill on a pack whose readers compete over a non-Latin script (DESIGN
+    §14.1): a number or code (``_agreed_tokens``) that two of ``reads`` (the page's reads other than
+    the chosen one: the readers that lost, the checker, dots) wrote the same, that the chosen text
+    and the earlier fills lack, as a whole token and anywhere in one of their lines' letters and
+    digits run together. The second read is the guard, so there is no confidence floor and no allowance for a
+    character glued on at either end: those let a code the chosen read cut short pass as present.
+    One fill per token, at the line and box of the first read that has it (in ``reads`` order), as
+    that read wrote it, with the plain letters and digits first when they differ. Not a pack step."""
+    have = {a for ln in chosen for a, _ in _agreed_tokens(ln.text)}
+    flat = [_alnum(_ascii_digits(ln.text)) for ln in chosen]
+    by: dict[str, set[str]] = {}
+    first: dict[str, tuple[str, Line, str]] = {}
+    for r in reads:
+        if r.status != "ok":
+            continue
+        for ln in r.lines:
+            if ln.box is None or not ln.text:
+                continue
+            for a, raw in _agreed_tokens(ln.text):
+                by.setdefault(a, set()).add(r.use_id)
+                first.setdefault(a, (raw, ln, r.use_id))
+    out: list[Fill] = []
+    for a, (raw, ln, source) in first.items():
+        if len(by[a]) < 2 or a in have or any(a in f for f in flat):
+            continue
+        plain = re.sub(r"[^A-Za-z0-9]", "", raw)
+        kind: FillKind = "id" if re.search(r"[A-Za-z]", plain) else "number"
+        out.append(Fill(kind, plain if raw == plain else f"{plain} {raw}", ln.conf, ln.box, source))
     return out
 
 
